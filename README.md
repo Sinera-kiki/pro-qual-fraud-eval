@@ -1,7 +1,5 @@
 # Pro-Qual-Fraud-Eval
 
-![资质造假浓度评估 · 自动化工作流](assets/cover.png)
-
 专业号资质造假治理的端到端工程实现，覆盖「相似资质识别 → 聚簇 → 抽样 → 人工复核标注 → 浓度评估 → 高危模板入库 → 漏拦截归因」的周度闭环。
 
 ## 背景
@@ -24,46 +22,53 @@
 
 ## 周度工作流
 
-整个评估以周为单位自动运转，链路如下：
+整个评估以周为单位自动运转，5 个核心阶段的完整闭环流程图如下：
 
-```plaintext
-每周一 8:00 定时触发
-  ↓
-自动计算上一周时间范围
-  ↓
-SQL 提取上一周全量账户资质 embedding 数据
-  ↓
-对全量账户资质图片进行本地聚簇
-  ↓
-SQL 计算全行业 / 金融 / 房地产大 N
-  ↓
-内置抽样公式计算抽样量
-  ↓
-SQL 抽取全行业 / 金融 / 房地产抽样 user_id
-  ↓
-对抽样 user_id 去重
-  ↓
-用抽样 user_id 匹配全量聚簇结果
-  ↓
-若样本账号 cluster_id >= 0，则把同簇其他账号一并带出
-  ↓
-生成抽样命中簇扩展结果表
-  ↓
-上传至标注平台
-  ↓
-人工标注
-  ↓
-下载标注结果 CSV
-  ↓
-计算违规浓度
-  ↓
-实锤簇代表图自动入库高危模板库
-  ↓
-实锤图 vs 送审图对照定位漏拦截原因（badcase 归因）
-  ↓
-迭代算法与拦截策略
-  ↓
-维护结果表并发送通知
+```mermaid
+flowchart TD
+    classDef trigger fill:#f8fafc,stroke:#94a3b8,stroke-width:1.5px,color:#334155,font-weight:bold;
+    classDef pipeline fill:#eff6ff,stroke:#3b82f6,stroke-width:1.5px,color:#1e3a8a;
+    classDef sampling fill:#fdf4ff,stroke:#c084fc,stroke-width:1.5px,color:#581c87;
+    classDef review fill:#fff7ed,stroke:#fb923c,stroke-width:1.5px,color:#7c2d12;
+    classDef eval fill:#ecfdf5,stroke:#10b981,stroke-width:1.5px,color:#064e3b;
+    classDef close fill:#fef2f2,stroke:#f43f5e,stroke-width:1.5px,color:#881337,font-weight:bold;
+
+    subgraph S1["阶段一 · 全量提取与聚簇 (Offline Pipeline)"]
+        T0["⏰ 每周一 8:00 自动触发"]:::trigger --> S1_1["计算上一周日期范围"]:::pipeline
+        S1_1 --> S1_2["SQL 提取全量资质 Embedding 数据<br/><code>full_account_embedding.csv</code>"]:::pipeline
+        S1_2 --> S1_3["本地全量快速聚簇<br/>(FAISS 粗筛 + 像素级校验 + Union-Find)"]:::pipeline
+        S1_3 --> S1_4["输出全量聚簇表 <code>full_cluster_result.csv</code><br/>(分配 cluster_id，-1 为孤立点)"]:::pipeline
+    end
+
+    subgraph S2["阶段二 · 置信度抽样与扫簇扩展 (Sampling)"]
+        S1_4 --> S2_1["SQL 统计大盘与高危行业大 N"]:::sampling
+        S2_1 --> S2_2["动态置信度公式计算抽样量 (99% 置信度)"]:::sampling
+        S2_2 --> S2_3["可复现哈希抽样 <code>crc32(user_id + salt)</code>"]:::sampling
+        S2_3 --> S2_4["样本去重并匹配全量聚簇结果"]:::sampling
+        S2_4 --> S2_5["命中有效簇 (cluster_id ≥ 0) → 扩展带出同簇全部账号<br/><code>sample_expanded_clusters.csv</code>"]:::sampling
+    end
+
+    subgraph S3["阶段三 · 簇级人工复核打标 (Annotation)"]
+        S2_5 --> S3_1["自动化上传至资质聚类标注平台"]:::review
+        S3_1 --> S3_2["审核员按图片簇网格化复核<br/>(实锤造假 / 疑似造假 / 资质挂靠 / 不违规)"]:::review
+        S3_2 --> S3_3["导出周度标注结果 <code>risk_evaluation_result.csv</code>"]:::review
+    end
+
+    subgraph S4["阶段四 · 违规浓度评估与资产入库 (Evaluation & Ingestion)"]
+        S3_3 --> S4_1["严格过滤：仅保留 <code>is_sample_user = True</code> 原始抽样账号"]:::eval
+        S4_1 --> S4_2["多维浓度计算 (大盘整体 / 金融行业 / 房地产行业)"]:::eval
+        S4_2 --> S4_3["实锤簇代表图提取 → VLM 剔纯电子版 → 跨周期去重"]:::eval
+        S4_3 --> S4_4["自动推送入库至高危模板库 (供拦截策略复用)"]:::eval
+    end
+
+    subgraph S5["阶段五 · 漏拦截归因与闭环迭代 (Closed-Loop Iteration)"]
+        S3_3 -.-> S5_1["周三 18:00 执行 <code>weekly_hammer_audit_compare.py</code>"]:::close
+        S5_1 --> S5_2{"实锤图 vs 机审送审图对照"}:::close
+        S5_2 -- "实锤图 = 送审图" --> R1["大模型工作流策略问题"]:::close
+        S5_2 -- "实锤图 ≠ 送审图" --> R2["未审到实锤图 (拆分/换图)"]:::close
+        S5_2 -- "因子无值" --> R3["相似检索未召回 (向量算法)"]:::close
+        R1 & R2 & R3 --> S5_3["反哺迭代：聚簇算法升级 + 拦截策略优化 + 留存通知 🎯"]:::close
+    end
 ```
 
 ### 各环节输入输出
@@ -231,8 +236,7 @@ pro-qual-fraud-eval/
 │   ├── high_risk_media_bot.py    # 入库机器人（代表图选择 → VLM 剔电子版 → 去重 → 入库）
 │   ├── AUTOMATION_UPLOAD_API.md  # 自动化上传接口协议
 │   └── frontend/                 # 复核页面
-├── assets/                       # 封面图与系统运行截图
-│   ├── cover.png                 # 项目封面图
+├── assets/                       # 系统运行高清截图
 │   └── screenshots/              # 运行界面截图（工作流 / 归因大盘 / 标注平台 / 跑批服务）
 ├── .github/workflows/            # CI（语法检查 + 敏感信息扫描 + 前端构建）
 ├── docs/                         # 架构与工程文档
