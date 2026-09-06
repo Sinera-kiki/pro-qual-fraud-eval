@@ -1,0 +1,1024 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>资质造假评估</title>
+<style>
+:root {
+  --bg: #ffffff;
+  --border: #f0f1f3;
+  --border-strong: #e5e7eb;
+  --text-1: #0f172a;
+  --text-2: #475569;
+  --text-3: #94a3b8;
+  --blue: #2563eb;
+  --blue-soft: #eff6ff;
+  --green: #10b981;
+  --green-soft: #ecfdf5;
+  --red: #ef4444;
+  --red-soft: #fef2f2;
+  --gray: #cbd5e1;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Inter", "PingFang SC", "Helvetica Neue", Arial, sans-serif;
+  background: var(--bg);
+  color: var(--text-1);
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+a { text-decoration: none; color: inherit; }
+
+/* ── Header ── */
+.header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 20px 40px;
+  border-bottom: 1px solid var(--border);
+}
+.header-left { display: flex; align-items: center; gap: 12px; }
+.brand-logo {
+  width: 28px; height: 28px; border-radius: 8px;
+  background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
+  display: flex; align-items: center; justify-content: center;
+  color: #fff; font-weight: 700; font-size: 13px;
+  box-shadow: 0 2px 8px rgba(37,99,235,0.2);
+}
+.header-left h1 { font-size: 15px; font-weight: 600; letter-spacing: 0.2px; }
+.week-badge {
+  color: var(--text-3); font-size: 13px; font-variant-numeric: tabular-nums;
+  margin-left: 4px;
+}
+
+/* 周期切换入口 */
+.week-switcher { position: relative; margin-left: 6px; }
+.week-badge-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  border: 1px solid transparent; background: transparent;
+  padding: 4px 10px; border-radius: 6px;
+  color: var(--text-3); font-size: 13px; font-variant-numeric: tabular-nums;
+  cursor: pointer; transition: all .15s;
+  font-family: inherit;
+}
+.week-badge-btn:hover { background: #f8fafc; color: var(--text-1); border-color: var(--border); }
+.week-badge-btn .chevron { opacity: 0.6; transition: transform .15s; }
+.week-switcher.open .week-badge-btn { background: #f8fafc; color: var(--text-1); border-color: var(--border); }
+.week-switcher.open .week-badge-btn .chevron { transform: rotate(180deg); }
+.week-menu {
+  position: absolute; left: 0; top: calc(100% + 6px);
+  background: #fff; border: 1px solid var(--border);
+  border-radius: 10px; min-width: 240px; z-index: 200; padding: 6px 0;
+  box-shadow: 0 12px 28px -8px rgba(15,23,42,0.12);
+  display: none;
+  max-height: 380px; overflow-y: auto;
+}
+.week-switcher.open .week-menu { display: block; }
+.week-menu-item {
+  padding: 9px 14px; font-size: 13px; color: var(--text-1);
+  cursor: pointer; display: flex; align-items: center; justify-content: space-between;
+  gap: 12px; transition: background .15s;
+  font-variant-numeric: tabular-nums;
+}
+.week-menu-item:hover { background: #f8fafc; }
+.week-menu-item.active { background: var(--blue-soft); color: var(--blue); font-weight: 500; }
+.week-menu-item .wm-status {
+  font-size: 11px; padding: 1px 6px; border-radius: 3px;
+  background: #f3f4f6; color: var(--text-3);
+}
+.week-menu-item .wm-status.done { background: var(--green-soft); color: var(--green); }
+.week-menu-item .wm-status.running { background: var(--blue-soft); color: var(--blue); }
+.week-menu-item .wm-status.failed { background: var(--red-soft); color: var(--red); }
+.week-menu-empty { padding: 14px; color: var(--text-3); font-size: 12px; text-align: center; }
+
+/* 整体状态 */
+.overall-status {
+  display: inline-flex; align-items: center; gap: 6px;
+  margin-left: 4px; padding: 4px 10px;
+  border-radius: 6px; background: transparent;
+  font-size: 12px; color: var(--text-2);
+  font-variant-numeric: tabular-nums;
+  transition: background .15s;
+}
+.overall-status .os-dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--text-3); flex-shrink: 0;
+}
+.overall-status.running .os-dot {
+  background: var(--blue);
+  animation: pulse 2s infinite;
+}
+.overall-status.done .os-dot { background: var(--green); }
+.overall-status.failed .os-dot { background: var(--red); }
+.overall-status.pending .os-dot { background: var(--text-3); }
+.header-right { display: flex; align-items: center; gap: 2px; }
+.nav-link {
+  color: var(--text-2); font-size: 13px;
+  padding: 6px 10px; border-radius: 6px;
+  display: inline-flex; align-items: center; gap: 6px;
+  transition: all .15s;
+}
+.nav-link:hover { color: var(--text-1); background: #f8fafc; }
+.nav-link.primary { color: var(--blue); font-weight: 500; }
+.nav-icon {
+  width: 14px; height: 14px; display: inline-block;
+  opacity: 0.7;
+}
+
+.icon-btn {
+  border: none; background: transparent; cursor: pointer;
+  padding: 6px 8px; border-radius: 6px; color: var(--text-2);
+  transition: all .15s; font-size: 15px; margin-left: 4px;
+}
+.icon-btn:hover { background: #f8fafc; color: var(--text-1); }
+
+/* ── Dropdown ── */
+.dropdown { position: relative; }
+.dropdown-menu {
+  position: absolute; right: 0; top: calc(100% + 6px);
+  background: #fff; border: 1px solid var(--border);
+  border-radius: 10px; width: 240px; z-index: 200; padding: 6px 0;
+  box-shadow: 0 12px 28px -8px rgba(15,23,42,0.12);
+  display: none;
+}
+.dropdown-item {
+  padding: 9px 16px; font-size: 13px; color: var(--text-1);
+  cursor: pointer; display: flex; align-items: center; gap: 10px;
+  transition: background .15s;
+}
+.dropdown-item:hover { background: #f8fafc; }
+.dropdown-item.warn { color: var(--red); }
+.dropdown-title {
+  padding: 10px 16px 4px; font-size: 11px; color: var(--text-3);
+  text-transform: uppercase; font-weight: 600; letter-spacing: 0.6px;
+}
+.dropdown-divider { height: 1px; background: var(--border); margin: 6px 0; }
+.full-select {
+  width: calc(100% - 32px); margin: 4px 16px; padding: 6px 10px;
+  border-radius: 6px; border: 1px solid var(--border);
+  font-size: 12px; outline: none; background: #fff;
+}
+.full-select:focus { border-color: var(--blue); }
+
+/* ── Layout ── */
+.main {
+  max-width: 1200px; margin: 0 auto; padding: 32px 40px 80px;
+}
+.main-layout {
+  display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+  gap: 56px; align-items: start;
+}
+@media (max-width: 900px) { .main-layout { grid-template-columns: 1fr; gap: 40px; } }
+
+.section-title {
+  font-size: 12px; font-weight: 600; color: var(--text-3);
+  text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 18px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.section-title .refresh-btn {
+  color: var(--text-3); cursor: pointer; padding: 2px 6px;
+  border-radius: 4px; transition: all .15s; font-size: 13px;
+}
+.section-title .refresh-btn:hover { color: var(--text-1); background: #f8fafc; }
+.section + .section { margin-top: 40px; }
+
+/* ── Timeline ── */
+.timeline { list-style: none; }
+.stage-item {
+  position: relative; padding-left: 24px; padding-bottom: 20px;
+}
+.stage-item:last-child { padding-bottom: 0; }
+.stage-item::before {
+  content: ''; position: absolute; left: 5px; top: 18px; bottom: -4px;
+  width: 1.5px; background: var(--border);
+}
+.stage-item:last-child::before { display: none; }
+
+.stage-icon {
+  position: absolute; left: 0; top: 4px;
+  width: 12px; height: 12px; border-radius: 50%;
+  background: #fff; border: 2px solid var(--gray); z-index: 2;
+}
+.stage-icon.running {
+  border-color: var(--blue); background: var(--blue);
+  animation: pulse 2s infinite;
+}
+.stage-icon.done { border-color: var(--green); background: var(--green); }
+.stage-icon.failed { border-color: var(--red); background: var(--red); }
+@keyframes pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(37,99,235,0.4); }
+  50% { box-shadow: 0 0 0 6px rgba(37,99,235,0); }
+}
+
+.stage-header {
+  display: flex; justify-content: space-between; align-items: baseline; gap: 12px;
+}
+.stage-title { font-weight: 500; font-size: 14px; color: var(--text-1); }
+.stage-time {
+  font-size: 12px; color: var(--text-3);
+  font-variant-numeric: tabular-nums; flex-shrink: 0;
+}
+.stage-log {
+  font-size: 12px; color: var(--text-3);
+  margin-top: 3px; line-height: 1.5;
+}
+.stage-actions { display: flex; gap: 8px; margin-top: 10px; }
+
+.mark-btn {
+  border: 1px solid var(--border); background: #fff;
+  padding: 3px 10px; border-radius: 5px; font-size: 12px;
+  color: var(--text-2); cursor: pointer; transition: all .15s;
+}
+.mark-btn:hover { border-color: var(--gray); color: var(--text-1); }
+
+/* ── Metrics Table ── */
+.metric-table { width: 100%; border-collapse: collapse; }
+.metric-table th, .metric-table td {
+  padding: 12px 8px; text-align: left; font-size: 13px;
+  border-bottom: 1px solid var(--border);
+}
+.metric-table th {
+  font-weight: 500; color: var(--text-3); font-size: 11px;
+  text-transform: uppercase; letter-spacing: 0.5px;
+  padding-bottom: 8px;
+}
+.metric-table th:first-child, .metric-table td:first-child { padding-left: 0; }
+.metric-table th:last-child, .metric-table td:last-child { padding-right: 0; }
+.metric-table tr:last-child td { border-bottom: none; }
+
+.metric-cell {
+  display: flex; flex-direction: column; gap: 3px;
+}
+.metric-value {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 13px; font-weight: 500; color: var(--text-1);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.3;
+  letter-spacing: -0.2px;
+}
+.metric-delta {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 11px; font-variant-numeric: tabular-nums;
+  display: inline-flex; align-items: center; gap: 2px;
+  line-height: 1.2;
+  letter-spacing: -0.2px;
+}
+.metric-delta.up { color: var(--red); }
+.metric-delta.down { color: var(--green); }
+.metric-delta.flat { color: var(--text-3); }
+.metric-value.empty {
+  color: var(--text-3); font-weight: 400;
+  font-family: -apple-system, BlinkMacSystemFont, "Inter", "PingFang SC", sans-serif;
+}
+
+.report-link {
+  display: inline-flex; align-items: center; gap: 4px;
+  color: var(--blue); font-size: 12px; font-weight: 500;
+  padding: 3px 8px; border-radius: 5px;
+  text-transform: none; letter-spacing: normal;
+  transition: background .15s;
+  text-decoration: none;
+}
+.report-link:hover { background: var(--blue-soft); }
+.report-link .nav-icon { width: 12px; height: 12px; opacity: 0.9; }
+
+.week-cell {
+  font-size: 12px; color: var(--text-2);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Artifacts ── */
+.artifact-group {
+  border-bottom: 1px solid var(--border);
+}
+.artifact-group:last-child { border-bottom: none; }
+.artifact-group-header {
+  display: flex; align-items: center; gap: 8px;
+  padding: 12px 0; cursor: pointer;
+  transition: all .15s;
+}
+.artifact-group-header:hover .artifact-group-title { color: var(--text-1); }
+.artifact-group-toggle {
+  color: var(--text-3); font-size: 10px;
+  transition: transform 0.2s;
+  display: inline-block;
+}
+.artifact-group.expanded .artifact-group-toggle {
+  transform: rotate(90deg);
+}
+.artifact-group-title {
+  font-size: 13px; color: var(--text-2); font-weight: 500;
+  transition: color .15s;
+}
+.artifact-group-count {
+  font-size: 11px; color: var(--text-3);
+  background: #f8fafc; padding: 1px 6px; border-radius: 8px;
+}
+.artifact-group-list {
+  display: none; padding-bottom: 8px;
+}
+.artifact-group.expanded .artifact-group-list {
+  display: block;
+}
+.artifact-item {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 8px 0 8px 16px;
+}
+.artifact-info { min-width: 0; }
+.artifact-info .fname {
+  font-size: 13px; color: var(--text-1); margin-bottom: 2px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  max-width: 320px;
+}
+.artifact-info .fmeta {
+  font-size: 11px; color: var(--text-3);
+}
+.artifact-actions {
+  display: flex; align-items: center; gap: 4px;
+  flex-shrink: 0;
+}
+.artifact-btn {
+  color: var(--blue); font-size: 12px; font-weight: 500;
+  padding: 4px 8px; border-radius: 5px; transition: background .15s;
+  cursor: pointer;
+}
+.artifact-btn:hover { background: var(--blue-soft); }
+.artifact-btn.delete { color: var(--text-3); }
+.artifact-btn.delete:hover { color: var(--red); background: var(--red-soft); }
+
+/* ── Empty State ── */
+.dim { color: var(--text-3); padding: 20px 0; font-size: 13px; }
+.empty { color: var(--text-3); font-size: 13px; padding: 12px 0; }
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="header-left">
+    <div class="brand-logo">Q</div>
+    <h1>资质造假评估</h1>
+    <div class="week-switcher" id="week-switcher">
+      <button class="week-badge-btn" id="week-badge-btn" type="button" onclick="toggleWeekMenu(event)">
+        <span id="week-badge">--</span>
+        <svg class="chevron" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+      </button>
+      <div class="week-menu" id="week-menu"></div>
+    </div>
+    <div class="overall-status" id="overall-status" title="本周整体状态">
+      <span class="os-dot"></span>
+      <span class="os-text">--</span>
+    </div>
+  </div>
+  <div class="header-right">
+    <a id="automation-link" href="#" class="nav-link primary" style="display:none;" target="_blank">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 3h7v7M10 14L21 3M5 21h14a2 2 0 0 0 2-2v-6"/></svg>
+      任务
+    </a>
+    <a href="__ANNOTATION_URL__" class="nav-link" target="_blank">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="m18.5 2.5 3 3L12 15l-4 1 1-4z"/></svg>
+      标注平台
+    </a>
+    <a href="__RESULT_URL__" class="nav-link" target="_blank">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+      结果留存
+    </a>
+
+    <div class="dropdown">
+      <button class="icon-btn" onclick="toggleGear(event)" title="管理操作">
+        <svg style="width:16px;height:16px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h.01a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h.01a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v.01a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      </button>
+      <div class="dropdown-menu" id="gear-menu">
+        <div class="dropdown-item warn" id="btn-start">⚡ 初始化本周任务</div>
+        <div class="dropdown-item" onclick="toggleFallbackMarks(event)">🛠 显示状态标记按钮</div>
+
+        <div class="dropdown-divider"></div>
+        <div class="dropdown-title">上传产物</div>
+        <select id="upload-stage" class="full-select"></select>
+        <label class="dropdown-item">📁 选择文件<input type="file" id="upload-input" hidden></label>
+
+        <div class="dropdown-divider"></div>
+        <div class="dropdown-title">上传评估 CSV</div>
+        <label class="dropdown-item">📊 选择 CSV<input type="file" id="metric-input" accept=".csv" hidden></label>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main class="main">
+  <div class="main-layout">
+
+    <!-- 左侧：时间轴 -->
+    <div class="left-col">
+      <div class="section">
+        <div class="section-title">
+          <span>资质造假浓度评估工作流</span>
+          <span class="refresh-btn" id="btn-refresh" title="刷新">↻</span>
+        </div>
+        <ul class="timeline" id="stages">
+          <div class="dim">加载中...</div>
+        </ul>
+      </div>
+    </div>
+
+    <!-- 右侧：违规浓度 + 产物 -->
+    <div class="right-col">
+      <div class="section">
+        <div class="section-title">
+          <span>违规浓度</span>
+          <a class="report-link" id="report-link" href="/report" target="_blank" rel="noopener" title="打开本周可视化评估视图">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M18.7 8l-5.1 5.2-2.8-2.7L7 14.3"/></svg>
+            评估视图
+          </a>
+        </div>
+        <table class="metric-table" id="metric-table">
+          <thead>
+            <tr>
+              <th>评估周期</th>
+              <th>大盘整体</th>
+              <th>房地产</th>
+              <th>金融行业</th>
+            </tr>
+          </thead>
+          <tbody id="metric-body">
+            <tr><td colspan="4" class="empty">暂无数据</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="section">
+        <div class="section-title">
+          <span>文件产物</span>
+        </div>
+        <div id="artifact-list">
+          <div class="empty">暂无产物</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<script>
+const state = { meta:null, currentRun:null, allRuns:[], showMarks:false, expandedGroups:{}, artifactStats:{} };
+
+// 周期切换菜单
+function toggleWeekMenu(e) {
+  if (e) e.stopPropagation();
+  document.getElementById('week-switcher').classList.toggle('open');
+}
+document.addEventListener('click', () => {
+  const sw = document.getElementById('week-switcher');
+  if (sw) sw.classList.remove('open');
+});
+document.addEventListener('DOMContentLoaded', () => {
+  const menu = document.getElementById('week-menu');
+  if (menu) menu.addEventListener('click', e => e.stopPropagation());
+});
+
+// stats 同步获取（依赖缓存）；如果未缓存，发请求并在回来后重新渲染
+function getArtifactStatsSync(artifactId) {
+  const key = String(artifactId);
+  if (state.artifactStats[key] !== undefined) return state.artifactStats[key];
+  state.artifactStats[key] = null; // 占位，避免重复拉
+  fetch(`/api/artifacts/${artifactId}/stats`).then(r => r.json()).then(data => {
+    state.artifactStats[key] = data;
+    if (state.currentRun) renderCurrent(); // 拿到后重渲
+  }).catch(() => { state.artifactStats[key] = null; });
+  return null;
+}
+
+function toggleGear(e) {
+  if (e) e.stopPropagation();
+  const menu = document.getElementById('gear-menu');
+  menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+}
+document.addEventListener('click', () => {
+  const menu = document.getElementById('gear-menu');
+  if (menu) menu.style.display = 'none';
+});
+document.getElementById('gear-menu').addEventListener('click', e => e.stopPropagation());
+
+function toggleFallbackMarks(e) {
+  if(e) e.preventDefault();
+  state.showMarks = !state.showMarks;
+  renderCurrent();
+  toggleGear();
+}
+
+// 阶段标题精简映射（前端展示层）
+const STAGE_TITLE_MAP = {
+  fetch_full: '取数',
+  cluster_full: '聚簇',
+  fetch_sample: '抽样',
+  match_expand: '匹配扩展',
+  upload_annotate: '上传标注',
+  notify_hi: '提醒通知',
+  wait_annotation: '等待标注',
+  calc_metric: '浓度评估',
+  write_result: '结果留存',
+};
+
+// 阶段日志精简：按阶段类型定制展示规则
+// 优先从 stage message 里提取业务数字；抽不到时回退到从 产物文件名/大小维度展示
+function extractStageLog(code, msg, artifacts, status) {
+  const stageArts = (artifacts || []).filter(a => a.stage_code === code);
+
+  // 先尝试从业务消息提取；失败后从 artifacts 兄弟字段兼向下文展示
+  const businessSummary = tryBusinessSummary(code, msg, status);
+  if (businessSummary) return businessSummary;
+
+  // 开头就是 [push] 产物已推送 / 当前无有信息时，回退到产物维度
+  return artifactSummary(code, stageArts);
+}
+
+function tryBusinessSummary(code, msg, status) {
+  if (!msg) return '';
+  msg = String(msg);
+  // 如果是默认 push 提示，直接返回空，进入产物兼往下展示
+  if (/^\[push\]\s*产物已推送：/.test(msg)) return '';
+
+  const pickNum = (re) => { const m = msg.match(re); return m ? m[1].replace(/,/g,'') : null; };
+  const fmtNum = (n) => n === null ? null : Number(n).toLocaleString('en-US');
+
+  switch (code) {
+    case 'fetch_full': {
+      // 共提取 24,389 行，覆盖 14,215 个账户
+      const rows = pickNum(/(\d[\d,]*)\s*行/);
+      const accounts = pickNum(/覆盖\s*(\d[\d,]*)\s*个\s*账户/) || pickNum(/去重[^\d]*(\d[\d,]*)\s*个/) || pickNum(/(\d[\d,]*)\s*个\s*账户/);
+      const parts = [];
+      if (rows) parts.push(`${fmtNum(rows)} 行`);
+      if (accounts) parts.push(`${fmtNum(accounts)} 个账户`);
+      return parts.join(' · ');
+    }
+    case 'cluster_full': {
+      // 共聚簇 24,389 行，形成 2,430 个簇，其中可疑簇 1,923 个，未成簇 15,082 行
+      const rows = pickNum(/(\d[\d,]*)\s*行/);
+      const clusters = pickNum(/(\d[\d,]*)\s*(?:个\s*)?簇/);
+      const suspect = pickNum(/可疑簇\s*(\d[\d,]*)/) || pickNum(/可疑[^\d]*(\d[\d,]*)\s*个/);
+      const parts = [];
+      if (rows) parts.push(`${fmtNum(rows)} 行`);
+      if (clusters) parts.push(`${fmtNum(clusters)} 个簇`);
+      if (suspect) parts.push(`可疑 ${fmtNum(suspect)} 个簇`);
+      return parts.join(' · ');
+    }
+    case 'fetch_sample': {
+      // 全行业抽样 1,034 个账户，金融行业 24 个，房地产 502 个，去重后共 1,517 个账户
+      const parts = [];
+      const all = pickNum(/全行业[^\d]*(\d[\d,]*)/);
+      const fin = pickNum(/金融[^\d]*(\d[\d,]*)/);
+      const re  = pickNum(/房(?:地产)?[^\d]*(\d[\d,]*)/);
+      const dedup = pickNum(/去重[^\d]*(?:共\s*)?(\d[\d,]*)/) || pickNum(/合计[^\d]*(\d[\d,]*)/);
+      if (all) parts.push(`全行业 ${fmtNum(all)}`);
+      if (fin) parts.push(`金融 ${fmtNum(fin)}`);
+      if (re)  parts.push(`房地产 ${fmtNum(re)}`);
+      if (dedup) parts.push(`去重 ${fmtNum(dedup)}`);
+      return parts.join(' · ');
+    }
+    case 'match_expand': {
+      // 共匹配上 780 个抽样账户，命中 689 个簇。
+      // 抽样账户 1,517 个，其中 23 个因无资质图数据剔除，有效抽样账户 1,494 个（浓度计算分母）…
+      // 匹配到簇的账户带出同簇账户 2,315 个，待标注账户合计 3,095 个
+      const valid = pickNum(/有效抽样账户\s*(\d[\d,]*)/);
+      const added = pickNum(/同簇账户\s*(\d[\d,]*)/) || pickNum(/新增\s*(?:同簇账户)?\s*(\d[\d,]*)/);
+      const parts = [];
+      if (valid) parts.push(`有效抽样账户 ${fmtNum(valid)} 个`);
+      if (added) parts.push(`新增同簇账户 ${fmtNum(added)} 个`);
+      return parts.join(' · ');
+    }
+    case 'upload_annotate': {
+      // 已上传标注平台，数据集 xxx.csv，共 5,511 行 / 689 个簇 / 3,095 个账户
+      const rows = pickNum(/(\d[\d,]*)\s*行/);
+      const clusters = pickNum(/(\d[\d,]*)\s*个?\s*簇/);
+      const accounts = pickNum(/(\d[\d,]*)\s*个\s*账户/);
+      const parts = [];
+      if (rows) parts.push(`${fmtNum(rows)} 行`);
+      if (clusters) parts.push(`${fmtNum(clusters)} 个簇`);
+      if (accounts) parts.push(`${fmtNum(accounts)} 个账户`);
+      return parts.join(' · ');
+    }
+    case 'notify_hi': {
+      // 只留第一句（遇到句号/逗号/换行就截）
+      const first = msg.split(/[。，,、\n\r]/)[0].trim();
+      return first.length > 40 ? first.slice(0, 40) + '…' : first;
+    }
+    case 'wait_annotation': {
+      return '等待人工标注中';
+    }
+    case 'calc_metric': {
+      // done 时优先展示固定文案，即使上游不推 message
+      if (status === 'done') return '违规浓度计算完成';
+      if (/^\s*$/.test(msg)) return '';
+      const groups = pickNum(/(\d[\d,]*)\s*个?\s*样本组/);
+      if (groups) return `完成 ${fmtNum(groups)} 个样本组浓度计算`;
+      return '违规浓度计算完成';
+    }
+    case 'write_result': {
+      if (status === 'done') return '已回填结果留存表';
+      if (/^\s*$/.test(msg)) return '';
+      return '已回填结果留存表';
+    }
+    default: {
+      const firstLine = msg.split(/[\n\r。]/)[0].trim();
+      return firstLine.length > 40 ? firstLine.slice(0, 40) + '…' : firstLine;
+    }
+  }
+}
+
+// 从阶段已上传的文件名列表启发式地展示（先看文件名里有无 sample/cluster/expanded 等关键字）
+function artifactSummary(code, arts) {
+  if (!arts || !arts.length) {
+    if (code === 'wait_annotation') return '等待人工标注中';
+    return '';
+  }
+  const names = arts.map(a => a.filename).join(' , ');
+  const bySize = arts.reduce((sum, a) => sum + (a.size || 0), 0);
+
+  switch (code) {
+    case 'fetch_full': {
+      const a = arts[0];
+      return `全量取数完成 · ${a.filename}`;
+    }
+    case 'cluster_full': {
+      const cluster = arts.find(a => /cluster/i.test(a.filename) && !/suspect/i.test(a.filename));
+      const suspect = arts.find(a => /suspect/i.test(a.filename));
+      const parts = [];
+      // 异步拉 stats 拿簇数（cluster_id 去重）——有缓存就直接取
+      if (cluster) {
+        const st = getArtifactStatsSync(cluster.id);
+        if (st && st.unique) {
+          const clusters = st.unique.cluster_id || st.unique.cluster || st.unique.group_id;
+          if (st.rows) parts.push(`${st.rows.toLocaleString('en-US')} 行`);
+          if (clusters) parts.push(`${clusters.toLocaleString('en-US')} 簇`);
+        } else {
+          parts.push('聚簇完成');
+        }
+      } else {
+        parts.push('聚簇完成');
+      }
+      if (suspect) parts.push('含可疑簇');
+      return parts.join(' · ');
+    }
+    case 'fetch_sample': {
+      const groups = [];
+      if (arts.find(a => /overall|allindustry|全行业/i.test(a.filename))) groups.push('全行业');
+      if (arts.find(a => /finance|金融/i.test(a.filename))) groups.push('金融');
+      if (arts.find(a => /realestate|房地产/i.test(a.filename))) groups.push('房地产');
+      return groups.length ? `已抽样：${groups.join(' / ')}` : `已抽样 · ${arts.length} 个产物`;
+    }
+    case 'match_expand': {
+      const expanded = arts.find(a => /expanded/i.test(a.filename));
+      const matched = arts.find(a => /matched/i.test(a.filename));
+      const parts = [];
+      if (matched) parts.push('已命中');
+      if (expanded) parts.push('已拓展同簇');
+      return parts.join(' · ') || '匹配拓展完成';
+    }
+    case 'upload_annotate': {
+      return `已上传 · ${arts[0].filename}`;
+    }
+    default:
+      return arts.length > 1 ? `${arts.length} 个产物` : arts[0].filename;
+  }
+}
+
+function defaultShort(msg) {
+  const firstLine = String(msg||'').split(/[\n\r。]/)[0].trim();
+  return firstLine.length > 40 ? firstLine.slice(0, 40) + '…' : firstLine;
+}
+
+function stageDotClass(status){
+  if(status==='done') return 'done';
+  if(status==='running') return 'running';
+  if(status==='failed') return 'failed';
+  return '';
+}
+const statusTextMap = {done:'完成', running:'进行中', failed:'失败', pending:'待执行', skipped:'跳过', created:'已创建'};
+
+async function fetchJSON(url, opts){
+  const resp = await fetch(url, opts);
+  if(!resp.ok){ const txt = await resp.text(); throw new Error(`${resp.status}: ${txt}`); }
+  return resp.json();
+}
+function fmtTime(iso){ return iso ? iso.replace('T',' ').slice(5,16) : ''; }
+
+async function loadMeta(){
+  state.meta = await fetchJSON('/api/meta');
+  document.getElementById('week-badge').textContent = `${state.meta.next_week_start.slice(5)} ~ ${state.meta.next_week_end.slice(5)}`;
+  const sel = document.getElementById('upload-stage');
+  sel.innerHTML = state.meta.stage_definitions.map(s=>`<option value="${s.code}">${STAGE_TITLE_MAP[s.code] || s.title}</option>`).join('');
+}
+
+async function loadCurrent(){
+  try{ state.currentRun = await fetchJSON('/api/runs/current'); renderCurrent(); }
+  catch(e){
+    document.getElementById('week-badge').textContent = '未初始化';
+    document.getElementById('stages').innerHTML = '<div class="dim">暂无本周任务</div>';
+  }
+}
+
+// 加载最近几周的浓度数据，做环比
+async function loadRunsAndMetrics(){
+  const {runs} = await fetchJSON('/api/runs?limit=12');
+  state.allRuns = runs;
+
+  // 顶部周期切换菜单
+  renderWeekMenu();
+
+  await loadMetricsHistory();
+}
+
+function renderWeekMenu() {
+  const menu = document.getElementById('week-menu');
+  if (!menu) return;
+  const curId = state.currentRun?.run?.id;
+  if (!state.allRuns.length) {
+    menu.innerHTML = '<div class="week-menu-empty">尚无历史周期</div>';
+    return;
+  }
+  menu.innerHTML = state.allRuns.map(r => {
+    const label = `${r.week_start.slice(5)} ~ ${r.week_end.slice(5)}`;
+    const statusCls = stageDotClass(r.status);
+    const statusLabel = statusTextMap[r.status] || r.status;
+    const active = curId === r.id ? ' active' : '';
+    return `<div class="week-menu-item${active}" data-run="${r.id}">
+      <span>${label}</span>
+      <span class="wm-status ${statusCls}">${statusLabel}</span>
+    </div>`;
+  }).join('');
+  menu.querySelectorAll('.week-menu-item').forEach(el => {
+    el.addEventListener('click', async () => {
+      const runId = parseInt(el.dataset.run, 10);
+      document.getElementById('week-switcher').classList.remove('open');
+      if (runId === curId) return;
+      await switchToRun(runId);
+    });
+  });
+}
+
+async function switchToRun(runId) {
+  if (!runId) return;
+  try {
+    state.currentRun = await fetchJSON(`/api/runs/${runId}`);
+    state.expandedGroups = {}; // 重置产物展开状态
+    renderCurrent();
+    renderWeekMenu();
+  } catch (e) { alert('切换失败：' + e.message); }
+}
+
+// 拉历史浓度（供 renderCurrentMetrics 找上周环比）——直接用 /api/metrics_history，它会含基线 run
+async function loadMetricsHistory() {
+  const j = await fetchJSON('/api/metrics_history?limit=20').catch(() => ({ weeks: [] }));
+  // 已按 week_start 升序
+  state.metricsHistory = (j.weeks || []).map(w => ({
+    run_id: w.run_id,
+    week_start: w.week_start,
+    overall: w.overall,
+    realestate: w.realestate,
+    finance: w.finance,
+  }));
+  renderCurrentMetrics();
+}
+
+// 仅展示当前 run 的一行，带环比上周箭头
+function renderCurrentMetrics() {
+  const tb = document.getElementById('metric-body');
+  if (!tb) return;
+  const d = state.currentRun;
+  if (!d || !d.metrics || !d.metrics.length) {
+    tb.innerHTML = '<tr><td colspan="4" class="empty">当前周无浓度数据</td></tr>';
+    return;
+  }
+
+  const map = {};
+  d.metrics.forEach(m => {
+    const key = m.sample_group.replace('行业样本','').replace('样本','').trim();
+    map[key] = m.concentration;
+  });
+  const cur = {
+    overall: map['整体'] ?? map['全行业'] ?? map['大盘'] ?? null,
+    realestate: map['房地产'] ?? null,
+    finance: map['金融'] ?? null,
+  };
+
+  // 上周：从 history 里找当前 run 前一个
+  const history = state.metricsHistory || [];
+  const curIdx = history.findIndex(h => h.run_id === d.run.id);
+  const prev = curIdx > 0 ? history[curIdx - 1]
+                          : (curIdx === -1 && history.length ? history[history.length - 1] : null);
+
+  const week = `${d.run.week_start.slice(5)} ~ ${d.run.week_end.slice(5)}`;
+  tb.innerHTML = `
+    <tr>
+      <td><span class="week-cell">${week}</span></td>
+      <td>${renderMetricCell(cur.overall, prev?.overall)}</td>
+      <td>${renderMetricCell(cur.realestate, prev?.realestate)}</td>
+      <td>${renderMetricCell(cur.finance, prev?.finance)}</td>
+    </tr>
+  `;
+}
+
+function renderMetricCell(cur, prev) {
+  if (cur === null || cur === undefined) {
+    return '<span class="metric-value empty">—</span>';
+  }
+  const curPct = (cur * 100).toFixed(2) + '%';
+  let deltaHtml = '';
+  if (prev !== null && prev !== undefined) {
+    const diff = (cur - prev) * 100; // 百分点变化
+    if (Math.abs(diff) < 0.005) {
+      deltaHtml = `<span class="metric-delta flat">— 持平</span>`;
+    } else if (diff > 0) {
+      deltaHtml = `<span class="metric-delta up">↑ ${diff.toFixed(2)}pp</span>`;
+    } else {
+      deltaHtml = `<span class="metric-delta down">↓ ${Math.abs(diff).toFixed(2)}pp</span>`;
+    }
+  } else {
+    deltaHtml = `<span class="metric-delta flat">首周基线</span>`;
+  }
+  return `<div class="metric-cell"><span class="metric-value">${curPct}</span>${deltaHtml}</div>`;
+}
+
+function renderOverallStatus(stages) {
+  const el = document.getElementById('overall-status');
+  if (!el) return;
+  const total = stages.length;
+  const cnt = {done:0, running:0, failed:0, pending:0, skipped:0, created:0};
+  stages.forEach(s => { cnt[s.status] = (cnt[s.status]||0) + 1; });
+  const done = cnt.done + cnt.skipped;
+  let cls = 'pending', text = `未开始 · 0/${total}`;
+  if (cnt.failed > 0) {
+    cls = 'failed';
+    text = `存在失败 · ${done}/${total}`;
+  } else if (cnt.running > 0) {
+    cls = 'running';
+    text = `进行中 · ${done}/${total}`;
+  } else if (done === total) {
+    cls = 'done';
+    text = `已完成 · ${total}/${total}`;
+  } else if (done > 0) {
+    cls = 'pending';
+    text = `待推进 · ${done}/${total}`;
+  }
+  el.className = 'overall-status ' + cls;
+  el.querySelector('.os-text').textContent = text;
+}
+
+function renderCurrent(){
+  const d = state.currentRun; if(!d) return;
+  const run = d.run;
+  document.getElementById('week-badge').textContent = `${run.week_start.slice(5)} ~ ${run.week_end.slice(5)}`;
+
+  const automationA = document.getElementById('automation-link');
+  if(run.automation_instance_url){ automationA.href = run.automation_instance_url; automationA.style.display = 'inline-flex'; }
+  else { automationA.style.display = 'none'; }
+
+  // 评估视图链接：直接指向当前 run 的可视化页面
+  const reportA = document.getElementById('report-link');
+  if (reportA) {
+    reportA.href = `/report/${run.id}`;
+    reportA.title = `查看 ${run.week_start.slice(5)} – ${run.week_end.slice(5)} 评估视图`;
+  }
+
+  // 整体状态（顶部小圆点）
+  renderOverallStatus(d.stages);
+
+  // Timeline
+  const ul = document.getElementById('stages');
+  ul.innerHTML = d.stages.map((s)=>{
+    const shortTitle = STAGE_TITLE_MAP[s.code] || s.title;
+    const shortLog = extractStageLog(s.code, s.message, d.artifacts, s.status);
+    return `
+    <li class="stage-item">
+      <div class="stage-icon ${stageDotClass(s.status)}"></div>
+      <div class="stage-header">
+        <span class="stage-title">${shortTitle}</span>
+        <span class="stage-time">${s.finished_at ? fmtTime(s.finished_at) : (s.started_at ? fmtTime(s.started_at) : '')}</span>
+      </div>
+      ${shortLog ? `<div class="stage-log">${escapeHtml(shortLog)}</div>` : ''}
+      ${state.showMarks ? `
+        <div class="stage-actions">
+          <button class="mark-btn" onclick="mark('${s.code}','done')">强制成功</button>
+          <button class="mark-btn" onclick="mark('${s.code}','failed')">强制失败</button>
+        </div>` : ''}
+    </li>`;
+  }).join('');
+
+  // Artifacts: 从当前 run 取
+  renderArtifacts(d.artifacts || []);
+
+  // 当周浓度（单行表）：切周时同步刷新，上周环比从 state.metricsHistory 找
+  renderCurrentMetrics();
+}
+
+function renderArtifacts(artifacts) {
+  const list = document.getElementById('artifact-list');
+  if (!artifacts.length) {
+    list.innerHTML = '<div class="empty">暂无产物</div>';
+    return;
+  }
+
+  // 按 stage_code 分组，排除 write_result 和 match_expand
+  const groups = {};
+  artifacts.filter(a => a.stage_code !== 'write_result' && a.stage_code !== 'match_expand').forEach(a => {
+    if (!groups[a.stage_code]) {
+      groups[a.stage_code] = { stage_code: a.stage_code, stage_title: a.stage_title, items: [] };
+    }
+    groups[a.stage_code].items.push(a);
+  });
+
+  list.innerHTML = Object.values(groups).map(g => {
+    const shortTitle = STAGE_TITLE_MAP[g.stage_code] || g.stage_title;
+    const isExpanded = state.expandedGroups[g.stage_code] ?? (g.items.length === 1);
+    return `
+      <div class="artifact-group ${isExpanded ? 'expanded' : ''}" data-stage="${g.stage_code}">
+        <div class="artifact-group-header" onclick="toggleArtifactGroup('${g.stage_code}')">
+          <span class="artifact-group-toggle">▶</span>
+          <span class="artifact-group-title">${shortTitle}</span>
+          <span class="artifact-group-count">${g.items.length}</span>
+        </div>
+        <div class="artifact-group-list">
+          ${g.items.map(a => `
+            <div class="artifact-item">
+              <div class="artifact-info">
+                <div class="fname" title="${escapeHtml(a.filename)}">${escapeHtml(a.filename)}</div>
+                <div class="fmeta">${formatSize(a.size)} · ${fmtTime(a.created_at)}</div>
+              </div>
+              <div class="artifact-actions">
+                <a class="artifact-btn" href="/api/artifacts/${a.id}/download" target="_blank">下载</a>
+                <span class="artifact-btn delete" onclick="deleteArtifact(${a.id}, '${escapeHtml(a.filename)}')" title="删除">删除</span>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+window.toggleArtifactGroup = (stage) => {
+  const el = document.querySelector(`.artifact-group[data-stage="${stage}"]`);
+  if (!el) return;
+  const nowExpanded = !el.classList.contains('expanded');
+  el.classList.toggle('expanded');
+  state.expandedGroups[stage] = nowExpanded;
+};
+
+window.deleteArtifact = async (id, name) => {
+  if (!confirm(`确认删除文件「${name}」？此操作不可恢复。`)) return;
+  try {
+    state.currentRun = await fetchJSON(`/api/artifacts/${id}`, { method: 'DELETE' });
+    renderCurrent();
+  } catch (e) { alert('删除失败：' + e.message); }
+};
+
+function escapeHtml(s){ return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function formatSize(n){ if(!n) return '-'; if(n<1024) return n+' B'; if(n<1024*1024) return (n/1024).toFixed(1)+' KB'; return (n/1048576).toFixed(2)+' MB'; }
+
+window.mark = async (code, st)=>{
+  try{
+    const qs = new URLSearchParams({status:st, message: `手动覆盖: ${st}`}).toString();
+    state.currentRun = await fetchJSON(`/api/runs/${state.currentRun.run.id}/stages/${code}/mark?${qs}`, {method:'POST'});
+    renderCurrent();
+  }catch(e){ alert('操作失败：'+e.message); }
+};
+
+document.getElementById('btn-start').addEventListener('click', async ()=>{
+  toggleGear();
+  try{ state.currentRun = await fetchJSON('/api/runs/start', {method:'POST'}); renderCurrent(); await loadRunsAndMetrics(); }
+  catch(e){ alert('初始化失败：'+e.message); }
+});
+document.getElementById('btn-refresh').addEventListener('click', async ()=>{
+  try { state.currentRun = await fetchJSON(`/api/runs/${state.currentRun.run.id}`); }
+  catch(e) { state.currentRun = await fetchJSON('/api/runs/current').catch(()=>null); }
+  renderCurrent(); await loadRunsAndMetrics();
+});
+
+document.getElementById('upload-input').addEventListener('change', async (e)=>{
+  const file = e.target.files[0]; if(!file) return; e.target.value=''; toggleGear();
+  const runId = state.currentRun?.run?.id; if(!runId) return alert('没有进行中的任务');
+  const stage = document.getElementById('upload-stage').value;
+  const fd = new FormData(); fd.append('file', file);
+  try{ state.currentRun = await fetchJSON(`/api/runs/${runId}/artifacts/upload?stage_code=${encodeURIComponent(stage)}`, {method:'POST', body:fd}); renderCurrent(); }
+  catch(err){ alert('上传失败：'+err.message); }
+});
+
+document.getElementById('metric-input').addEventListener('change', async (e)=>{
+  const file = e.target.files[0]; if(!file) return; e.target.value=''; toggleGear();
+  const runId = state.currentRun?.run?.id; if(!runId) return alert('没有进行中的任务');
+  const fd = new FormData(); fd.append('file', file);
+  try{
+    state.currentRun = await fetchJSON(`/api/runs/${runId}/calc_metric`, {method:'POST', body:fd});
+    renderCurrent(); await loadRunsAndMetrics();
+  } catch(err){ alert('评估失败：'+err.message); }
+});
+
+(async ()=>{
+  await loadMeta();
+  state.currentRun = await fetchJSON('/api/runs/current').catch(()=>null);
+  renderCurrent();
+  await loadRunsAndMetrics();
+})();
+</script>
+</body>
+</html>

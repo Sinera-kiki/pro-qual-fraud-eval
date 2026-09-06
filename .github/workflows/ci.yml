@@ -1,0 +1,65 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  python-syntax-check:
+    name: Python Syntax Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Compile all Python files
+        run: |
+          echo "Compiling all Python files..."
+          find src annotation-platform dashboard cluster-service high-risk-template scripts tests -name '*.py' -print0 \
+            | xargs -0 -I{} python -c "import py_compile; py_compile.compile('{}', doraise=True)" \
+            && echo "All Python files compile successfully"
+
+  secret-scan:
+    name: Sensitive Info Scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Scan for hardcoded internal patterns
+        run: |
+          set -e
+          echo "Scanning for sensitive patterns..."
+          # Exclude this workflow file itself (patterns are defined here as string literals)
+          if grep -rE 'xiaohongshu\.com|pypi\.devops|10\.[0-9]+\.[0-9]+\.[0-9]+' \
+            --include='*.py' --include='*.md' --include='*.sh' \
+            --include='*.sql' --include='*.json' --include='*.ts' \
+            --include='*.tsx' --include='*.html' \
+            --exclude-dir=node_modules --exclude-dir=.git \
+            --exclude-dir=__pycache__ --exclude-dir=.github . ; then
+            echo "Sensitive patterns detected. Please review and remove."
+            exit 1
+          fi
+          echo "No sensitive patterns detected"
+
+  frontend-build:
+    name: Frontend Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install & build frontend
+        working-directory: annotation-platform/frontend
+        run: |
+          npm install --no-audit --no-fund
+          npm run build

@@ -1,0 +1,1672 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>资质造假评估视图</title>
+<script src="https://cdn.staticfile.net/echarts/5.5.0/echarts.min.js"></script>
+<style>
+:root {
+  --bg: #f8fafc;
+  --card: #ffffff;
+  --border: #e2e8f0;
+  --border-soft: #f1f5f9;
+  --text-1: #1e293b;
+  --text-2: #64748b;
+  --text-3: #94a3b8;
+  --blue: #3b82f6;
+  --blue-soft: #eff6ff;
+  --blue-light: #dbeafe;
+  --green: #10b981;
+  --green-soft: #ecfdf5;
+  --red: #f43f5e;
+  --red-soft: #fff1f2;
+  --orange: #f59e0b;
+  --orange-soft: #fffbeb;
+  --purple: #8b5cf6;
+  --purple-soft: #f5f3ff;
+  --cyan: #06b6d4;
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.04);
+  --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.06), 0 2px 4px -2px rgba(0,0,0,0.04);
+  --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.07), 0 4px 6px -4px rgba(0,0,0,0.04);
+  --radius: 12px;
+  --radius-sm: 8px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "Noto Sans SC", "Helvetica Neue", Arial, sans-serif;
+  background: var(--bg);
+  color: var(--text-1);
+  font-size: 14px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ── Header ── */
+.header {
+  display: flex; align-items: center; gap: 14px;
+  padding: 14px 32px;
+  background: rgba(255,255,255,0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  position: sticky; top: 0; z-index: 100;
+}
+.brand-logo {
+  width: 28px; height: 28px; border-radius: 7px;
+  background: var(--text-1);
+  display: flex; align-items: center; justify-content: center;
+  color: #fff; font-weight: 600; font-size: 13px;
+  flex-shrink: 0;
+}
+.header h1 { font-size: 15px; font-weight: 600; color: var(--text-1); letter-spacing: -0.01em; }
+.header .week {
+  color: var(--text-3); font-size: 12px; font-variant-numeric: tabular-nums;
+  padding-left: 14px; border-left: 1px solid var(--border);
+  font-weight: 500;
+}
+.header .spacer { flex: 1; }
+.header a {
+  color: var(--text-2); font-size: 13px; text-decoration: none; font-weight: 500;
+  padding: 5px 12px; border-radius: var(--radius-sm); transition: all .2s;
+  border: 1px solid transparent;
+}
+.header a:hover { background: var(--border-soft); color: var(--text-1); border-color: var(--border); }
+
+/* ─ Main ── */
+.main { max-width: 1200px; margin: 0 auto; padding: 24px 32px 80px; }
+
+/* ── KPI Cards ── */
+.kpi-row {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;
+  margin-bottom: 24px;
+}
+.kpi-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px 28px;
+  box-shadow: var(--shadow-sm);
+  transition: all .25s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+.kpi-card::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+  background: var(--blue); opacity: 0;
+  transition: opacity .25s;
+}
+.kpi-card:nth-child(2)::before { background: var(--red); }
+.kpi-card:nth-child(3)::before { background: var(--orange); }
+.kpi-card:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+  border-color: var(--border);
+}
+.kpi-card:hover::before { opacity: 1; }
+.kpi-label {
+  font-size: 11px; color: var(--text-3); font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 14px;
+}
+.kpi-value {
+  font-family: "SF Mono", SFMono-Regular, ui-monospace, Menlo, Monaco, Consolas, monospace;
+  font-size: 32px; font-weight: 700; color: var(--text-1);
+  font-variant-numeric: tabular-nums; line-height: 1;
+  letter-spacing: -1px;
+}
+.kpi-value.empty { color: var(--text-3); font-weight: 400; font-size: 18px; letter-spacing: 0; }
+.kpi-delta {
+  margin-top: 14px; font-size: 12px; font-weight: 600;
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 4px 10px; border-radius: 20px;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.01em;
+}
+.kpi-delta.up { color: var(--red); background: var(--red-soft); }
+.kpi-delta.down { color: var(--green); background: var(--green-soft); }
+.kpi-delta.flat { color: var(--text-3); background: var(--border-soft); }
+.kpi-delta.first { color: var(--text-3); background: var(--border-soft); font-weight: 500; }
+
+/* ── Section Cards ── */
+.section {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px 28px;
+  margin-bottom: 20px;
+  box-shadow: var(--shadow-sm);
+}
+.section-head {
+  display: flex; align-items: baseline; justify-content: space-between;
+  margin-bottom: 20px;
+}
+.section-title {
+  font-size: 14px; font-weight: 600; color: var(--text-1);
+  letter-spacing: -0.01em;
+}
+.section-sub { font-size: 11px; color: var(--text-3); font-weight: 400; margin-top: 2px; }
+.two-col {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 20px;
+}
+@media (max-width: 960px) { .two-col { grid-template-columns: 1fr; } }
+
+/* ── Chart wrappers ── */
+.chart {
+  width: 100%; height: 320px;
+}
+.chart.small { height: 280px; }
+.chart.tall { height: 400px; }
+.chart-empty {
+  height: 320px; display: flex; align-items: center; justify-content: center;
+  color: var(--text-3); font-size: 13px; background: var(--bg); border-radius: var(--radius-sm);
+  flex-direction: column; gap: 6px;
+}
+
+/* ── Loading & error ── */
+.loading, .error {
+  padding: 80px 20px; text-align: center; color: var(--text-3); font-size: 14px;
+}
+.error { color: var(--red); }
+
+/* ── Drilldown badge ── */
+.drilldown-hint {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 11px; color: var(--blue); font-weight: 500;
+  padding: 2px 8px; background: var(--blue-soft); border-radius: 12px;
+  margin-left: 8px;
+}
+
+/* ── L2 drawer ── */
+.drawer-mask {
+  position: fixed; inset: 0; background: rgba(15,23,42,0.35);
+  backdrop-filter: blur(4px);
+  z-index: 300; display: none;
+}
+.drawer-mask.open { display: block; }
+.drawer {
+  position: fixed; top: 0; right: 0; bottom: 0;
+  width: min(600px, 100vw);
+  background: #fff; z-index: 301;
+  box-shadow: var(--shadow-lg);
+  transform: translateX(100%); transition: transform .3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex; flex-direction: column;
+}
+.drawer.open { transform: translateX(0); }
+.drawer-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 20px 24px; border-bottom: 1px solid var(--border);
+}
+.drawer-title { font-size: 15px; font-weight: 600; letter-spacing: -0.01em; }
+.drawer-sub { font-size: 12px; color: var(--text-3); margin-top: 4px; }
+.drawer-close {
+  border: none; background: transparent; cursor: pointer;
+  font-size: 18px; color: var(--text-3);
+  width: 32px; height: 32px; border-radius: var(--radius-sm);
+  display: flex; align-items: center; justify-content: center;
+  transition: all .15s;
+}
+.drawer-close:hover { background: var(--border-soft); color: var(--text-1); }
+.drawer-body { flex: 1; padding: 20px 24px; overflow-y: auto; }
+
+/* ── Empty overlay ── */
+.data-source {
+  font-size: 11px; color: var(--text-3);
+  text-align: right; padding: 4px 0;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Sub-chart labels ── */
+.sub-chart-label {
+  font-size: 11px; color: var(--text-3); font-weight: 500;
+  margin-bottom: 10px; letter-spacing: 0.02em;
+}
+
+/* ─ Mini cards in registered compare ── */
+.mini-card {
+  flex: 1; background: var(--bg); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); padding: 14px 16px;
+}
+.mini-card-label { font-size: 11px; color: var(--text-3); margin-bottom: 6px; font-weight: 500; }
+.mini-card-value {
+  font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums;
+  color: var(--text-1); letter-spacing: -0.5px;
+}
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="brand-logo">Q</div>
+  <h1>资质造假评估视图</h1>
+  <span class="week" id="week-label">加载中…</span>
+  <span class="spacer"></span>
+  <a href="/" target="_blank" rel="noopener">← 返回看板</a>
+</header>
+
+<main class="main">
+  <div id="content"><div class="loading">数据加载中…</div></div>
+</main>
+
+<!-- L2 Drilldown Drawer -->
+<div class="drawer-mask" id="drawer-mask" onclick="closeDrawer()"></div>
+<div class="drawer" id="drawer">
+  <div class="drawer-head">
+    <div>
+      <div class="drawer-title" id="drawer-title">二级行业分布</div>
+      <div class="drawer-sub" id="drawer-sub"></div>
+    </div>
+    <button class="drawer-close" onclick="closeDrawer()">✕</button>
+  </div>
+  <div class="drawer-body">
+    <div id="drawer-content"></div>
+    <div id="drawer-chart" class="chart tall"></div>
+  </div>
+</div>
+
+<script>
+const RUN_ID = __RUN_ID__;
+const state = { detail: null, history: null, charts: {}, drawerChart: null };
+
+// ── 统一配色 ──
+const COLORS = {
+  blue:    '#3b82f6',
+  rose:    '#f43f5e',
+  amber:   '#f59e0b',
+  emerald: '#10b981',
+  violet:  '#8b5cf6',
+  cyan:    '#06b6d4',
+  orange:  '#f97316',
+  indigo:  '#6366f1',
+  slate:   '#94a3b8',
+  slate2:  '#cbd5e1',
+};
+const PIE_PALETTE = [
+  '#3b82f6', '#f43f5e', '#f59e0b', '#10b981',
+  '#8b5cf6', '#06b6d4', '#f97316', '#6366f1',
+  '#ec4899', '#14b8a6', '#84cc16', '#94a3b8',
+];
+
+async function fetchJSON(url) {
+  const r = await fetch(url);
+  if (!r.ok) throw new Error(`${r.status}: ${await r.text()}`);
+  return r.json();
+}
+
+function pct(a, b) { return b ? (a / b * 100) : 0; }
+
+// ── 主流程 ─────────────
+(async function main() {
+  try {
+    const [detail, history] = await Promise.all([
+      fetchJSON(`/api/runs/${RUN_ID}`),
+      fetchJSON('/api/metrics_history?limit=20').catch(() => ({ weeks: [] })),
+    ]);
+    state.detail = detail;
+    state.history = history;
+    render();
+  } catch (e) {
+    document.getElementById('content').innerHTML = `<div class="error">加载失败：${e.message}</div>`;
+  }
+})();
+
+function render() {
+  const d = state.detail;
+  const run = d.run;
+  document.getElementById('week-label').textContent = `${run.week_start} ~ ${run.week_end}`;
+
+  const html = `
+    ${renderKPISection()}
+    ${renderTrendSection()}
+    <div class="two-col">
+      ${renderL1PieSection()}
+      ${renderL2BarSection()}
+    </div>
+    ${renderConcentrationCompareSection()}
+    ${renderRegisteredCompareSection()}
+    ${renderViolationSourceSection()}
+    ${renderSuspectedSection()}
+    ${renderConfidenceSection()}
+  `;
+  document.getElementById('content').innerHTML = html;
+
+  setTimeout(() => {
+    renderTrendChart();
+    renderConcentrationCompareChart();
+    renderL1PieChart();
+    renderL2BarChart();
+    renderRegisteredCompareChart();
+    renderViolationSourceChart();
+    renderSuspectedChart();
+    renderConfidenceChart();
+  }, 30);
+}
+
+// ── KPI 卡片 ─────────────
+function renderKPISection() {
+  const metrics = {};
+  (state.detail.metrics || []).forEach(m => {
+    const k = m.sample_group.replace('行业样本', '').replace('样本', '').trim();
+    metrics[k] = m.concentration;
+  });
+
+  const cur = {
+    overall: metrics['整体'] ?? metrics['全行业'] ?? metrics['大盘'] ?? null,
+    realestate: metrics['房地产'] ?? null,
+    finance: metrics['金融'] ?? null,
+  };
+
+  const weeks = state.history.weeks || [];
+  const curIdx = weeks.findIndex(w => w.run_id === state.detail.run.id);
+  const prev = curIdx > 0 ? weeks[curIdx - 1] : (curIdx === -1 && weeks.length ? weeks[weeks.length - 1] : null);
+
+  return `
+    <div class="kpi-row">
+      ${renderKPI('大盘整体', cur.overall, prev?.overall)}
+      ${renderKPI('房地产', cur.realestate, prev?.realestate)}
+      ${renderKPI('金融', cur.finance, prev?.finance)}
+    </div>
+  `;
+}
+
+function renderKPI(label, cur, prev) {
+  const valueHtml = cur === null || cur === undefined
+    ? `<div class="kpi-value empty">暂无数据</div>`
+    : `<div class="kpi-value">${(cur * 100).toFixed(2)}%</div>`;
+
+  let deltaHtml = '';
+  if (cur !== null && cur !== undefined) {
+    if (prev === null || prev === undefined) {
+      deltaHtml = `<div class="kpi-delta first">首次数据</div>`;
+    } else {
+      const diff = (cur - prev) * 100;
+      if (Math.abs(diff) < 0.005) {
+        deltaHtml = `<div class="kpi-delta flat">— 持平</div>`;
+      } else if (diff > 0) {
+        deltaHtml = `<div class="kpi-delta up">↑ ${diff.toFixed(2)}pp</div>`;
+      } else {
+        deltaHtml = `<div class="kpi-delta down">↓ ${Math.abs(diff).toFixed(2)}pp</div>`;
+      }
+    }
+  }
+
+  return `
+    <div class="kpi-card">
+      <div class="kpi-label">${label}违规浓度</div>
+      ${valueHtml}
+      ${deltaHtml}
+    </div>
+  `;
+}
+
+// ── 各行业浓度环比 ─────────────
+function renderConcentrationCompareSection() {
+  return `
+    <div class="section">
+      <div class="section-head">
+        <div>
+          <div class="section-title">各行业违规浓度 · 环比上周</div>
+          <div class="section-sub" id="concentration-compare-sub">处理中…</div>
+        </div>
+      </div>
+      <div class="chart tall" id="chart-concentration-compare"></div>
+    </div>
+  `;
+}
+
+function renderConcentrationCompareChart() {
+  const el = document.getElementById('chart-concentration-compare');
+  if (!el) return;
+
+  const cmpTitleEl = document.getElementById('concentration-compare-sub');
+  const curSample = {};
+  (state.detail.sample_distribution || []).forEach(s => { curSample[s.industry] = s.count; });
+  const curViol = {};
+  (state.detail.violation_distribution || []).forEach(v => { curViol[v.industry] = v.violated_count; });
+
+  const weeks = state.history.weeks || [];
+  const curIdx = weeks.findIndex(w => w.run_id === state.detail.run.id);
+  const prevWeek = curIdx > 0 ? weeks[curIdx - 1]
+                              : (curIdx === -1 && weeks.length ? weeks[weeks.length - 1] : null);
+
+  if (!prevWeek) {
+    el.innerHTML = '<div class="chart-empty">未找到上周数据，无法计算环比</div>';
+    cmpTitleEl.textContent = '无上周参照';
+    return;
+  }
+
+  fetch(`/api/runs/${prevWeek.run_id}`).then(r => r.json()).then(prev => {
+    const prevSample = {};
+    (prev.sample_distribution || []).forEach(s => { prevSample[s.industry] = s.count; });
+    const prevViol = {};
+    (prev.violation_distribution || []).forEach(v => { prevViol[v.industry] = v.violated_count; });
+
+    const prevLabel = prevWeek.is_baseline && prevWeek.baseline_label
+      ? prevWeek.baseline_label
+      : `${(prevWeek.week_start||'').replace(/-/g,'').slice(4)}-${(prevWeek.week_end||'').replace(/-/g,'').slice(4)}`;
+    cmpTitleEl.textContent = `本周 vs 上周 ${prevLabel} · 按变化幅度降序`;
+
+    const allIndustries = new Set([...Object.keys(curSample), ...Object.keys(prevSample)]);
+    const items = [...allIndustries]
+      .map(ind => {
+        const cs = curSample[ind] || 0;
+        const cv = curViol[ind] || 0;
+        const ps = prevSample[ind] || 0;
+        const pv = prevViol[ind] || 0;
+        const curConc = cs ? cv / cs * 100 : null;
+        const prevConc = ps ? pv / ps * 100 : null;
+        return {
+          industry: ind,
+          curConc, prevConc,
+          cs, cv, ps, pv,
+          delta: (curConc !== null && prevConc !== null) ? (curConc - prevConc) : null,
+        };
+      })
+      .filter(i => i.curConc !== null && i.prevConc !== null && Math.abs(i.delta) >= 0.01)
+      .sort((a, b) => Math.abs(b.delta) - Math.abs(a.delta));
+
+    if (!items.length) {
+      el.innerHTML = '<div class="chart-empty">本周与上周无共同行业，无法环比</div>';
+      return;
+    }
+
+    el.style.height = Math.max(300, items.length * 34 + 60) + 'px';
+
+    const chart = echarts.init(el);
+    chart.setOption({
+      tooltip: {
+        trigger: 'axis', axisPointer: { type: 'shadow', shadowStyle: { color: 'rgba(0,0,0,0.03)' } },
+        backgroundColor: '#fff',
+        borderColor: '#e2e8f0',
+        borderWidth: 1,
+        padding: [10, 14],
+        textStyle: { color: '#1e293b', fontSize: 12 },
+        formatter: params => {
+          const it = items[params[0].dataIndex];
+          const sign = it.delta > 0 ? '+' : (it.delta < 0 ? '' : '±');
+          const deltaColor = it.delta > 0 ? '#f43f5e' : (it.delta < 0 ? '#10b981' : '#94a3b8');
+          return `${it.industry}<br/>` +
+            `<span style="color:#64748b;">本周</span> <b>${it.curConc.toFixed(2)}%</b> <span style="color:#94a3b8;">(${it.cv}/${it.cs})</span><br/>` +
+            `<span style="color:#64748b;">上周</span> ${it.prevConc.toFixed(2)}% <span style="color:#94a3b8;">(${it.pv}/${it.ps})</span><br/>` +
+            `<b style="color:${deltaColor};">环比 ${sign}${it.delta.toFixed(2)}pp</b>`;
+        },
+      },
+      grid: { top: 16, right: 140, bottom: 24, left: 96 },
+      xAxis: {
+        type: 'value',
+        axisLabel: { formatter: '{value}pp', color: '#94a3b8', fontSize: 11 },
+        splitLine: { lineStyle: { color: '#f1f5f9', type: 'dashed' } },
+        axisLine: { show: false },
+        axisTick: { show: false },
+      },
+      yAxis: {
+        type: 'category', inverse: true,
+        data: items.map(i => i.industry),
+        axisLine: { show: false },
+        axisTick: { show: false },
+        axisLabel: { color: '#475569', fontSize: 12 },
+      },
+      series: [{
+        type: 'bar',
+        data: items.map(i => ({
+          value: +i.delta.toFixed(2),
+          itemStyle: {
+            color: i.delta > 0.01 ? '#fda4af' : (i.delta < -0.01 ? '#6ee7b7' : '#cbd5e1'),
+            borderRadius: 3,
+          },
+        })),
+        label: {
+          show: true, position: 'right', color: '#64748b', fontSize: 11,
+          formatter: p => {
+            const it = items[p.dataIndex];
+            const sign = it.delta > 0 ? '+' : '';
+            return `${sign}${it.delta.toFixed(2)}pp`;
+          },
+        },
+        barMaxWidth: 14,
+      }],
+    });
+
+    window.addEventListener('resize', () => chart.resize());
+    state.charts.concentrationCompare = chart;
+  }).catch(e => {
+    el.innerHTML = `<div class="chart-empty">拉取上周数据失败：${e.message}</div>`;
+  });
+}
+
+// ─ 浓度趋势折线图 ─────────────
+function renderTrendSection() {
+  return `
+    <div class="section">
+      <div class="section-head">
+        <div class="section-title">违规浓度趋势</div>
+        <div class="section-sub">近 ${(state.history.weeks || []).length} 周</div>
+      </div>
+      <div class="chart" id="chart-trend"></div>
+    </div>
+  `;
+}
+
+function renderTrendChart() {
+  // 趋势图去掉 baseline 点（2026-08-20 确认），从首个非-baseline 周开始
+  const weeks = (state.history.weeks || []).filter(w => !w.is_baseline);
+  const el = document.getElementById('chart-trend');
+  if (!el || !weeks.length) return;
+
+  const chart = echarts.init(el);
+  const xData = weeks.map(w => {
+    if (w.is_baseline && w.baseline_label) return w.baseline_label;
+    const start = (w.week_start || '').replace(/-/g, '').slice(4);
+    const end   = (w.week_end   || '').replace(/-/g, '').slice(4);
+    return start && end ? `${start}-${end}` : (w.week_start || '').slice(5);
+  });
+  // 逐点选择标签位置：同一 x 上三条线的值排序，最高放 top，最低放 bottom，中间也放 top 但 distance 拉大
+  const seriesKeys = [
+    { name: '大盘整体', key: 'overall',    color: '#3b82f6' },
+    { name: '房地产',     key: 'realestate', color: '#f43f5e' },
+    { name: '金融',         key: 'finance',    color: '#f59e0b' },
+  ];
+  // 先建一个矩阵：rows[x][seriesIdx] = value；然后对每一列排序，得到每个点在同 x 上的位次
+  const rows = weeks.map(w => seriesKeys.map(s => w[s.key] === null || w[s.key] === undefined ? null : +(w[s.key] * 100).toFixed(2)));
+  // labelPos[seriesIdx][xIdx] = { position, distance }
+  const labelPos = seriesKeys.map(() => []);
+  rows.forEach((rowVals, xIdx) => {
+    const indexed = rowVals.map((v, i) => ({ v, i })).filter(o => o.v !== null);
+    if (!indexed.length) return;
+    // 按 v 从高到低排序
+    indexed.sort((a, b) => b.v - a.v);
+    indexed.forEach((o, rank) => {
+      let position = 'top', distance = 8;
+      if (indexed.length === 1) { position = 'top'; distance = 8; }
+      else if (rank === 0) { position = 'top'; distance = 10; }
+      else if (rank === indexed.length - 1) {
+        // 最低位：默认 bottom；但贴着 0 轴的点（≤1%）下方没空间，翻到 top
+        position = o.v <= 1 ? 'top' : 'bottom';
+        distance = 6;
+      }
+      else {
+        // 中间位：放到离相邻点更远的那一侧（避开挨得近的邻线）
+        const gapAbove = indexed[rank - 1].v - o.v;
+        const gapBelow = o.v - indexed[rank + 1].v;
+        if (gapAbove >= gapBelow) { position = 'top'; distance = 8; }
+        else { position = 'bottom'; distance = 8; }
+      }
+      labelPos[o.i][xIdx] = { position, distance };
+    });
+  });
+
+  const buildSeries = (seriesIdx, name, key, color) => ({
+    name, type: 'line', smooth: true,
+    symbol: 'circle', symbolSize: 6,
+    showSymbol: true,
+    emphasis: { symbolSize: 9 },
+    data: weeks.map((w, xIdx) => {
+      const v = w[key] === null || w[key] === undefined ? null : +(w[key] * 100).toFixed(2);
+      if (v === null) return null;
+      const lp = labelPos[seriesIdx][xIdx] || { position: 'top', distance: 6 };
+      return {
+        value: v,
+        label: {
+          show: true,
+          position: lp.position,
+          distance: lp.distance,
+          color,
+          fontSize: 11,
+          fontWeight: 600,
+          formatter: `${v}%`,
+        },
+      };
+    }),
+    itemStyle: { color, borderWidth: 2, borderColor: '#fff' },
+    lineStyle: { width: 2, cap: 'round' },
+    connectNulls: true,
+  });
+
+  chart.setOption({
+    tooltip: {
+      trigger: 'axis',
+      backgroundColor: '#fff',
+      borderColor: '#e2e8f0',
+      borderWidth: 1,
+      padding: [10, 14],
+      textStyle: { color: '#1e293b', fontSize: 12 },
+      valueFormatter: v => v === null ? '—' : `${v}%`,
+    },
+    legend: {
+      top: 0, right: 0,
+      textStyle: { fontSize: 12, color: '#64748b' },
+      itemWidth: 16, itemHeight: 3, itemGap: 20,
+    },
+    grid: { top: 56, right: 20, bottom: 36, left: 42 },
+    xAxis: {
+      type: 'category', data: xData,
+      axisLine: { show: false },
+      axisTick: { show: false },
+      axisLabel: { color: '#94a3b8', fontSize: 11 },
+    },
+    yAxis: {
+      type: 'value', min: 0, max: 100,
+      axisLabel: { formatter: '{value}%', color: '#94a3b8', fontSize: 11 },
+      splitLine: { lineStyle: { color: '#f1f5f9' } },
+      axisLine: { show: false },
+      axisTick: { show: false },
+    },
+    series: seriesKeys.map((s, i) => buildSeries(i, s.name, s.key, s.color)),
+  });
+
+  window.addEventListener('resize', () => chart.resize());
+  state.charts.trend = chart;
+}
+
+// ── 大盘一级行业违规占比 ─────────────
+function renderL1PieSection() {
+  return `
+    <div class="section">
+      <div class="section-head">
+        <div>
+          <div class="section-title">一级行业违规构成
+            <span class="drilldown-hint">点击下钻</span>
+          </div>
+        </div>
+      </div>
+      <div class="chart" id="chart-l1-pie"></div>
+    </div>
+  `;
+}
+
+function renderL1PieChart() {
+  const el = document.getElementById('chart-l1-pie');
+  if (!el) return;
+
+  const items = (state.detail.violation_distribution || [])
+    .filter(v => v.violated_count > 0)
+    .map(v => ({ name: v.industry, value: v.violated_count }));
+
+  if (!items.length) {
+    el.innerHTML = '<div class="chart-empty">暂无违规行业分布数据</div>';
+    return;
+  }
+
+  const chart = echarts.init(el);
+  chart.setOption({
+    tooltip: {
+      trigger: 'item',
+      backgroundColor: '#fff',
+      borderColor: '#e2e8f0',
+      borderWidth: 1,
+      padding: [10, 14],
+      textStyle: { color: '#1e293b', fontSize: 12 },
+      formatter: p => `${p.name}<br/><span style="color:#64748b;">违规账户</span> ${p.value} · <b>${p.percent}%</b>`,
+    },
+    legend: {
+      type: 'scroll', bottom: 0,
+      textStyle: { fontSize: 11, color: '#64748b' },
+      itemWidth: 10, itemHeight: 10, itemGap: 14,
+    },
+    series: [{
+      type: 'pie',
+      radius: ['50%', '72%'],
+      center: ['50%', '44%'],
+      avoidLabelOverlap: true,
+      padAngle: 2,
+      itemStyle: { borderRadius: 5, borderColor: '#fff', borderWidth: 2 },
+      label: {
+        show: true,
+        formatter: p => p.percent >= 5 ? `{name|${p.name}}\n{val|${p.percent}%}` : '',
+        rich: {
+          name: { fontSize: 11, color: '#475569', lineHeight: 18 },
+          val:  { fontSize: 10, color: '#94a3b8', fontWeight: 600 },
+        },
+      },
+      labelLine: { length: 10, length2: 8, lineStyle: { color: '#e2e8f0' } },
+      emphasis: {
+        scaleSize: 4,
+        itemStyle: { shadowBlur: 12, shadowColor: 'rgba(0,0,0,0.1)' },
+      },
+      data: items.map((d, i) => ({ ...d, itemStyle: { color: PIE_PALETTE[i % PIE_PALETTE.length] } })),
+    }],
+  });
+
+  chart.on('click', p => openL2Drawer(p.name));
+  window.addEventListener('resize', () => chart.resize());
+  state.charts.l1pie = chart;
+}
+
+// ── 房地产二级行业违规占比 ────────────
+function renderL2BarSection() {
+  return `
+    <div class="section">
+      <div class="section-head">
+        <div class="section-title">房地产二级行业违规分布</div>
+      </div>
+      <div class="chart" id="chart-realestate-l2"></div>
+    </div>
+  `;
+}
+
+function renderL2BarChart() {
+  const el = document.getElementById('chart-realestate-l2');
+  if (!el) return;
+
+  const items = (state.detail.violation_distribution_l2 || [])
+    .filter(v => v.first_industry === '房地产' && v.violated_count > 0)
+    .sort((a, b) => b.violated_count - a.violated_count);
+
+  if (!items.length) {
+    el.innerHTML = '<div class="chart-empty">暂无房地产二级行业数据<br/><span style="font-size:11px;color:#94a3b8;">等待数据推送</span></div>';
+    return;
+  }
+
+  const maxVal = Math.max(...items.map(i => i.violated_count));
+
+  const chart = echarts.init(el);
+  chart.setOption({
+    tooltip: {
+      trigger: 'axis', axisPointer: { type: 'shadow', shadowStyle: { color: 'rgba(0,0,0,0.03)' } },
+      backgroundColor: '#fff', borderColor: '#e2e8f0', borderWidth: 1,
+      padding: [10, 14], textStyle: { color: '#1e293b', fontSize: 12 },
+    },
+    grid: { top: 16, right: 48, bottom: 20, left: 90 },
+    xAxis: {
+      type: 'value',
+      axisLine: { show: false }, axisTick: { show: false },
+      axisLabel: { color: '#94a3b8', fontSize: 11 },
+      splitLine: { lineStyle: { color: '#f1f5f9', type: 'dashed' } },
+    },
+    yAxis: {
+      type: 'category', inverse: true,
+      data: items.map(i => i.second_industry),
+      axisLine: { show: false }, axisTick: { show: false },
+      axisLabel: { color: '#475569', fontSize: 12 },
+    },
+    series: [{
+      type: 'bar',
+      data: items.map(i => ({
+        value: i.violated_count,
+        itemStyle: {
+          color: {
+            type: 'linear', x: 0, y: 0, x2: 1, y2: 0,
+            colorStops: [
+              { offset: 0, color: '#3b82f6' },
+              { offset: 1, color: '#60a5fa' },
+            ],
+          },
+          borderRadius: [0, 3, 3, 0],
+        },
+      })),
+      label: {
+        show: true, position: 'right', color: '#94a3b8', fontSize: 11,
+        formatter: '{c}',
+      },
+      barMaxWidth: 14,
+    }],
+  });
+
+  window.addEventListener('resize', () => chart.resize());
+  state.charts.realestateL2 = chart;
+}
+
+// ── 二级行业下钻抽屉 ─────────────
+function openL2Drawer(firstIndustry) {
+  document.getElementById('drawer-content').style.display = 'none';
+  document.getElementById('drawer-content').innerHTML = '';
+  document.getElementById('drawer-chart').style.display = 'block';
+  const items = (state.detail.violation_distribution_l2 || [])
+    .filter(v => v.first_industry === firstIndustry && v.violated_count > 0)
+    .sort((a, b) => b.violated_count - a.violated_count);
+
+  document.getElementById('drawer-title').textContent = `${firstIndustry} · 二级行业违规分布`;
+  document.getElementById('drawer-sub').textContent = items.length
+    ? `共 ${items.length} 个二级行业`
+    : '暂无二级行业数据';
+
+  document.getElementById('drawer-mask').classList.add('open');
+  document.getElementById('drawer').classList.add('open');
+
+  setTimeout(() => {
+    const el = document.getElementById('drawer-chart');
+    if (!items.length) {
+      el.innerHTML = '<div class="chart-empty">暂无二级行业数据</div>';
+      return;
+    }
+    if (state.drawerChart) { state.drawerChart.dispose(); state.drawerChart = null; }
+    state.drawerChart = echarts.init(el);
+    state.drawerChart.setOption({
+      tooltip: {
+        trigger: 'axis', axisPointer: { type: 'shadow', shadowStyle: { color: 'rgba(0,0,0,0.03)' } },
+        backgroundColor: '#fff', borderColor: '#e2e8f0', borderWidth: 1,
+        padding: [10, 14], textStyle: { color: '#1e293b', fontSize: 12 },
+      },
+      grid: { top: 16, right: 48, bottom: 20, left: 100 },
+      xAxis: {
+        type: 'value',
+        axisLine: { show: false }, axisTick: { show: false },
+        axisLabel: { color: '#94a3b8', fontSize: 11 },
+        splitLine: { lineStyle: { color: '#f1f5f9', type: 'dashed' } },
+      },
+      yAxis: {
+        type: 'category', inverse: true,
+        data: items.map(i => i.second_industry),
+        axisLine: { show: false }, axisTick: { show: false },
+        axisLabel: { color: '#475569', fontSize: 12 },
+      },
+      series: [{
+        type: 'bar',
+        data: items.map(i => ({
+          value: i.violated_count,
+          itemStyle: {
+            color: {
+              type: 'linear', x: 0, y: 0, x2: 1, y2: 0,
+              colorStops: [
+                { offset: 0, color: '#3b82f6' },
+                { offset: 1, color: '#60a5fa' },
+              ],
+            },
+            borderRadius: [0, 3, 3, 0],
+          },
+        })),
+        label: { show: true, position: 'right', color: '#94a3b8', fontSize: 11, formatter: '{c}' },
+        barMaxWidth: 14,
+      }],
+    });
+  }, 50);
+}
+
+window.closeDrawer = function() {
+  document.getElementById('drawer-mask').classList.remove('open');
+  document.getElementById('drawer').classList.remove('open');
+};
+
+// ── 认证方式分布块（行业下钻抽屉内，有数据才渲染） ─────
+function renderCertMethodBlock(industry) {
+  const cert = (state.detail.cert_method || []).filter(c => c.industry === industry);
+  if (!cert.length) return '';
+
+  const METHOD_COLORS = ['#6366f1', '#06b6d4', '#8b5cf6', '#f97316'];
+  const regTotal = cert.reduce((s, c) => s + (c.registered_count || 0), 0);
+  const vioTotal = cert.reduce((s, c) => s + (c.violated_count || 0), 0);
+
+  const segBar = items => {
+    const segs = items.filter(s => s.v > 0);
+    if (!segs.length) return '<div style="height:12px;"></div>';
+    return `<div style="display:flex;height:12px;border-radius:6px;overflow:hidden;background:#f1f5f9;">${segs.map(s => `<div title="${s.name} ${s.v.toLocaleString()} (${s.pct.toFixed(1)}%)" style="background:${s.color};width:${s.pct}%;"></div>`).join('')}</div>`;
+  };
+
+  const regSegs = cert.map((c, i) => ({ name: c.method, v: c.registered_count || 0, color: METHOD_COLORS[i % METHOD_COLORS.length], pct: regTotal ? (c.registered_count || 0) / regTotal * 100 : 0 }));
+  const vioSegs = cert.map((c, i) => ({ name: c.method, v: c.violated_count || 0, color: METHOD_COLORS[i % METHOD_COLORS.length], pct: vioTotal ? (c.violated_count || 0) / vioTotal * 100 : 0 }));
+
+  const rowHtml = (c, i) => {
+    const color = METHOD_COLORS[i % METHOD_COLORS.length];
+    const rv = c.registered_count || 0;
+    const vv = c.violated_count || 0;
+    const pctR = regTotal ? rv / regTotal * 100 : 0;
+    const pctV = vioTotal ? vv / vioTotal * 100 : 0;
+    let liftHtml;
+    if (!rv || !vioTotal) {
+      liftHtml = '<span style="color:#cbd5e1;">—</span>';
+    } else {
+      const lift = pctV / pctR;
+      const lc = lift >= 1.3 ? '#f43f5e' : (lift <= 0.7 ? '#10b981' : '#64748b');
+      liftHtml = `<span style="font-weight:700;color:${lc};">×${lift.toFixed(2)}</span>`;
+    }
+    return `
+      <tr>
+        <td style="padding:10px 0;"><span style="display:inline-flex;align-items:center;gap:8px;"><span style="width:8px;height:8px;border-radius:2px;background:${color};"></span><span style="font-size:13px;color:#334155;">${c.method}</span></span></td>
+        <td style="padding:10px 0;text-align:right;font-variant-numeric:tabular-nums;color:#1e293b;font-weight:600;">${rv.toLocaleString()}</td>
+        <td style="padding:10px 0;text-align:right;font-variant-numeric:tabular-nums;color:#94a3b8;">${pctR.toFixed(1)}%</td>
+        <td style="padding:10px 0;text-align:right;font-variant-numeric:tabular-nums;color:#334155;">${vv.toLocaleString()}</td>
+        <td style="padding:10px 0;text-align:right;font-variant-numeric:tabular-nums;color:#94a3b8;">${pctV.toFixed(1)}%</td>
+        <td style="padding:10px 0;text-align:right;font-variant-numeric:tabular-nums;">${liftHtml}</td>
+      </tr>
+    `;
+  };
+
+  return `
+    <div style="margin-top:28px;padding-top:20px;border-top:1px solid #f1f5f9;"></div>
+    <div class="sub-chart-label">认证方式分布 · 全量入驻占比</div>
+    ${segBar(regSegs)}
+    <div style="display:flex;gap:16px;margin-top:8px;margin-bottom:16px;flex-wrap:wrap;">
+      ${regSegs.filter(s=>s.v>0).map(s => `<span style="display:inline-flex;align-items:center;gap:6px;font-size:11px;color:#64748b;"><span style="width:8px;height:8px;border-radius:2px;background:${s.color};"></span>${s.name} <span style="color:#1e293b;font-weight:600;">${s.v.toLocaleString()}</span> <span style="color:#94a3b8;">(${s.pct.toFixed(1)}%)</span></span>`).join('')}
+    </div>
+    ${vioTotal ? `
+    <div class="sub-chart-label">实锤造假 · 认证方式占比（标注口径，以数据推送为准）</div>
+    ${segBar(vioSegs)}
+    <div style="display:flex;gap:16px;margin-top:8px;margin-bottom:16px;flex-wrap:wrap;">
+      ${vioSegs.filter(s=>s.v>0).map(s => `<span style="display:inline-flex;align-items:center;gap:6px;font-size:11px;color:#64748b;"><span style="width:8px;height:8px;border-radius:2px;background:${s.color};"></span>${s.name} <span style="color:#1e293b;font-weight:600;">${s.v.toLocaleString()}</span> <span style="color:#94a3b8;">(${s.pct.toFixed(1)}%)</span></span>`).join('')}
+    </div>` : ''}
+    <div class="sub-chart-label" style="margin-bottom:4px;">认证方式明细 · 占比偏移 = 造假占比 / 入驻占比</div>
+    <table style="width:100%;border-collapse:collapse;">
+      <thead>
+        <tr style="border-bottom:1px solid #e2e8f0;">
+          <th style="text-align:left;font-size:11px;color:#94a3b8;font-weight:600;padding:6px 0;">认证方式</th>
+          <th style="text-align:right;font-size:11px;color:#94a3b8;font-weight:600;padding:6px 0;">全量入驻</th>
+          <th style="text-align:right;font-size:11px;color:#94a3b8;font-weight:600;padding:6px 0;">入驻占比</th>
+          <th style="text-align:right;font-size:11px;color:#94a3b8;font-weight:600;padding:6px 0;">实锤造假</th>
+          <th style="text-align:right;font-size:11px;color:#94a3b8;font-weight:600;padding:6px 0;">造假占比</th>
+          <th style="text-align:right;font-size:11px;color:#94a3b8;font-weight:600;padding:6px 0;">占比偏移</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${cert.map((c, i) => rowHtml(c, i)).join('')}
+        <tr style="border-top:1px solid #e2e8f0;">
+          <td style="padding:10px 0;font-size:13px;font-weight:600;color:#1e293b;">合计</td>
+          <td style="padding:10px 0;text-align:right;font-variant-numeric:tabular-nums;color:#1e293b;font-weight:700;">${regTotal.toLocaleString()}</td>
+          <td style="padding:10px 0;text-align:right;font-variant-numeric:tabular-nums;color:#94a3b8;">100%</td>
+          <td style="padding:10px 0;text-align:right;font-variant-numeric:tabular-nums;color:#1e293b;font-weight:700;">${vioTotal.toLocaleString()}</td>
+          <td style="padding:10px 0;text-align:right;font-variant-numeric:tabular-nums;color:#94a3b8;">100%</td>
+          <td style="padding:10px 0;"></td>
+        </tr>
+      </tbody>
+    </table>
+    <div style="margin-top:12px;font-size:11px;color:#94a3b8;line-height:1.6;">
+      注：实锤造假来自抽样标注结果，仅比较两组构成占比的相对偏移。
+    </div>
+  `;
+}
+
+// ── 行业入驻/造假来源下钻抽屉（入驻量级图点击） ─────
+function openIndustrySourceDrawer(industry) {
+  const chartEl = document.getElementById('drawer-chart');
+  const contentEl = document.getElementById('drawer-content');
+  if (!contentEl) return;
+
+  const rs = (state.detail.registered_source || []).find(r => r.industry === industry);
+  const vs = (state.detail.violation_source || []).find(r => r.industry === industry);
+
+  const reg = rs ? { p: rs.professional_count || 0, s: rs.shop_count || 0, a: rs.ad_count || 0 } : null;
+  const vio = vs ? { p: vs.professional_count || 0, s: vs.shop_count || 0, a: vs.ad_count || 0 } : null;
+  const regTotal = reg ? reg.p + reg.s + reg.a : 0;
+  const vioTotal = vio ? vio.p + vio.s + vio.a : 0;
+
+  document.getElementById('drawer-title').textContent = `${industry} · 入驻来源 vs 造假来源`;
+
+  // 两个实锤口径分开标：抽样标注（浓度口径） / 标注池（含同簇扩展，violation_source 总数与 confirmed_fake_uid 一致）
+  const vdRow = (state.detail.violation_distribution || []).find(v => v.industry === industry);
+  const sampleRow = (state.detail.sample_distribution || []).find(s => s.industry === industry);
+  const sampleCount = sampleRow ? sampleRow.count : null;
+  const sampleViolated = vdRow ? vdRow.violated_count : null;
+
+  let subText = '';
+  if (regTotal) {
+    subText = `入驻 ${regTotal.toLocaleString()}（全量）`;
+    if (sampleCount != null && sampleViolated != null) {
+      subText += ` · 抽样 ${sampleCount.toLocaleString()} 实锤 ${sampleViolated.toLocaleString()}`;
+    }
+    if (vioTotal) {
+      subText += ` · 标注池实锤 ${vioTotal.toLocaleString()}（含同簇扩展）`;
+    }
+  } else {
+    subText = '暂无入驻来源数据';
+  }
+  document.getElementById('drawer-sub').textContent = subText;
+
+  document.getElementById('drawer-mask').classList.add('open');
+  document.getElementById('drawer').classList.add('open');
+  if (state.drawerChart) { state.drawerChart.dispose(); state.drawerChart = null; }
+  chartEl.style.display = 'none';
+  contentEl.style.display = 'block';
+
+  const chans = [
+    { name: '专业号入驻', color: '#3b82f6' },
+    { name: '号店入驻',   color: '#f59e0b' },
+    { name: '号广入驻',   color: '#10b981' },
+  ];
+  const keys = ['p', 's', 'a'];
+
+  if (!reg) {
+    contentEl.innerHTML = `<div class="chart-empty">暂无 ${industry} 的入驻来源数据<br/><span style="font-size:11px;color:#94a3b8;">需数据推送 registered_source</span></div>`;
+    return;
+  }
+
+  const rowHtml = (name, color, rv, vv) => {
+    const pctR = regTotal ? (rv / regTotal * 100) : 0;
+    const pctV = vioTotal ? (vv / vioTotal * 100) : 0;
+    // 占比偏移 = 造假来源占比 / 入驻占比，>1 表示该渠道造假占比高于其入驻占比（风险偏高）
+    let liftHtml;
+    if (!rv || !vioTotal) {
+      liftHtml = '<span style="color:#cbd5e1;">—</span>';
+    } else {
+      const lift = pctV / pctR;
+      const color = lift >= 1.3 ? '#f43f5e' : (lift <= 0.7 ? '#10b981' : '#64748b');
+      liftHtml = `<span style="font-weight:700;color:${color};">×${lift.toFixed(2)}</span>`;
+    }
+    return `
+      <tr>
+        <td style="padding:10px 0;"><span style="display:inline-flex;align-items:center;gap:8px;"><span style="width:8px;height:8px;border-radius:2px;background:${color};"></span><span style="font-size:13px;color:#334155;">${name}</span></span></td>
+        <td style="padding:10px 0;text-align:right;font-variant-numeric:tabular-nums;color:#1e293b;font-weight:600;">${rv.toLocaleString()}</td>
+        <td style="padding:10px 0;text-align:right;font-variant-numeric:tabular-nums;color:#94a3b8;">${pctR.toFixed(1)}%</td>
+        <td style="padding:10px 0;text-align:right;font-variant-numeric:tabular-nums;color:#334155;">${vv.toLocaleString()}</td>
+        <td style="padding:10px 0;text-align:right;font-variant-numeric:tabular-nums;color:#94a3b8;">${pctV.toFixed(1)}%</td>
+        <td style="padding:10px 0;text-align:right;font-variant-numeric:tabular-nums;">${liftHtml}</td>
+      </tr>
+    `;
+  };
+
+  // 占比条（入驻 vs 造假双条对照）
+  const segBar = (vals, total) => {
+    const segs = chans.map((c, i) => ({ ...c, v: vals[i], pct: total ? vals[i] / total * 100 : 0 })).filter(s => s.v > 0);
+    if (!segs.length) return '<div style="height:12px;"></div>';
+    return `<div style="display:flex;height:12px;border-radius:6px;overflow:hidden;background:#f1f5f9;">${segs.map(s => `<div title="${s.name} ${s.v.toLocaleString()} (${s.pct.toFixed(1)}%)" style="background:${s.color};width:${s.pct}%;"></div>`).join('')}</div>`;
+  };
+
+  contentEl.innerHTML = `
+    <div class="sub-chart-label">入驻来源占比</div>
+    ${segBar([reg.p, reg.s, reg.a], regTotal)}
+    <div style="display:flex;gap:16px;margin-top:8px;margin-bottom:20px;flex-wrap:wrap;">
+      ${chans.map((c, i) => { const v = [reg.p, reg.s, reg.a][i]; return `<span style="display:inline-flex;align-items:center;gap:6px;font-size:11px;color:#64748b;"><span style="width:8px;height:8px;border-radius:2px;background:${c.color};"></span>${c.name} <span style="color:#1e293b;font-weight:600;">${v.toLocaleString()}</span></span>`; }).join('')}
+    </div>
+    ${vioTotal ? `
+    <div class="sub-chart-label">实锤造假来源占比 · 标注池口径（抽样+同簇扩展，非浓度口径）</div>
+    ${segBar([vio.p, vio.s, vio.a], vioTotal)}
+    <div style="display:flex;gap:16px;margin-top:8px;margin-bottom:20px;flex-wrap:wrap;">
+      ${chans.map((c, i) => { const v = [vio.p, vio.s, vio.a][i]; const share = vioTotal ? v / vioTotal * 100 : 0; return `<span style="display:inline-flex;align-items:center;gap:6px;font-size:11px;color:#64748b;"><span style="width:8px;height:8px;border-radius:2px;background:${c.color};"></span>${c.name} <span style="color:#1e293b;font-weight:600;">${v.toLocaleString()}</span> <span style="color:#94a3b8;">(${share.toFixed(1)}%)</span></span>`; }).join('')}
+    </div>` : ''}
+    ${renderCertMethodBlock(industry)}
+    <div class="sub-chart-label" style="margin-bottom:4px;">渠道明细 · 占比偏移 = 造假占比 / 入驻占比，×>1 表示该渠道造假占比高于其入驻占比</div>
+    <table style="width:100%;border-collapse:collapse;">
+      <thead>
+        <tr style="border-bottom:1px solid #e2e8f0;">
+          <th style="text-align:left;font-size:11px;color:#94a3b8;font-weight:600;padding:6px 0;">渠道</th>
+          <th style="text-align:right;font-size:11px;color:#94a3b8;font-weight:600;padding:6px 0;">入驻</th>
+          <th style="text-align:right;font-size:11px;color:#94a3b8;font-weight:600;padding:6px 0;">入驻占比</th>
+          <th style="text-align:right;font-size:11px;color:#94a3b8;font-weight:600;padding:6px 0;">实锤造假</th>
+          <th style="text-align:right;font-size:11px;color:#94a3b8;font-weight:600;padding:6px 0;">造假占比</th>
+          <th style="text-align:right;font-size:11px;color:#94a3b8;font-weight:600;padding:6px 0;">占比偏移</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${chans.map((c, i) => rowHtml(c.name, c.color, [reg.p, reg.s, reg.a][i], vio ? [vio.p, vio.s, vio.a][i] : 0)).join('')}
+        <tr style="border-top:1px solid #e2e8f0;">
+          <td style="padding:10px 0;font-size:13px;font-weight:600;color:#1e293b;">合计</td>
+          <td style="padding:10px 0;text-align:right;font-variant-numeric:tabular-nums;color:#1e293b;font-weight:700;">${regTotal.toLocaleString()}</td>
+          <td style="padding:10px 0;text-align:right;font-variant-numeric:tabular-nums;color:#94a3b8;">100%</td>
+          <td style="padding:10px 0;text-align:right;font-variant-numeric:tabular-nums;color:#1e293b;font-weight:700;">${vioTotal.toLocaleString()}</td>
+          <td style="padding:10px 0;text-align:right;font-variant-numeric:tabular-nums;color:#94a3b8;">100%</td>
+          <td style="padding:10px 0;"></td>
+        </tr>
+      </tbody>
+    </table>
+    <div style="margin-top:12px;font-size:11px;color:#94a3b8;line-height:1.6;">
+      注：渠道拆分基于标注池实锤结果（抽样+同簇扩展，与 industry_baseline 的 confirmed_fake_uid 同口径），因含同簇扩展账户，绝对量高于抽样实锤数；仅比较两组构成占比的相对偏移，不代表浓度。
+    </div>
+  `;
+}
+
+// ── 入驻量级对比 ─────────────
+function renderRegisteredCompareSection() {
+  return `
+    <div class="section">
+      <div class="section-head">
+        <div>
+          <div class="section-title">各行业入驻量级 · 本周 vs 上周</div>
+          <div class="section-sub" id="registered-compare-sub">处理中…</div>
+        </div>
+      </div>
+      <div id="registered-overall" style="display:flex;gap:12px;margin-bottom:12px;"></div>
+      <div id="registered-source-row" style="margin-bottom:18px;"></div>
+      <div class="chart tall" id="chart-registered-compare"></div>
+    </div>
+  `;
+}
+
+function renderRegisteredCompareChart() {
+  const el = document.getElementById('chart-registered-compare');
+  const overallEl = document.getElementById('registered-overall');
+  const subEl = document.getElementById('registered-compare-sub');
+  if (!el) return;
+
+  // ── 入驻来源构成行（不依赖上周数据，先渲染） ──
+  const srcRowEl = document.getElementById('registered-source-row');
+  if (srcRowEl) {
+    const rs = (state.detail.registered_source || []).find(r => r.industry === '大盘整体');
+    const total = rs ? ((rs.professional_count || 0) + (rs.shop_count || 0) + (rs.ad_count || 0)) : 0;
+    if (rs && total > 0) {
+      const chans = [
+        { name: '专业号入驻', v: rs.professional_count || 0, color: '#3b82f6' },
+        { name: '号店入驻', v: rs.shop_count || 0, color: '#f59e0b' },
+        { name: '号广入驻', v: rs.ad_count || 0, color: '#10b981' },
+      ];
+      srcRowEl.innerHTML = `
+        <div class="sub-chart-label">入驻来源构成 · 总计 ${total.toLocaleString()}</div>
+        <div style="display:flex;gap:12px;">
+          ${chans.map(c => `
+            <div style="flex:1;display:flex;align-items:center;gap:8px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 14px;">
+              <span style="width:8px;height:8px;border-radius:2px;background:${c.color};flex-shrink:0;"></span>
+              <span style="font-size:12px;color:var(--text-2);">${c.name}</span>
+              <span style="margin-left:auto;font-size:14px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--text-1);">${(c.v / total * 100).toFixed(1)}%</span>
+              <span style="font-size:11px;color:var(--text-3);font-variant-numeric:tabular-nums;">${c.v.toLocaleString()}</span>
+            </div>
+          `).join('')}
+        </div>
+      `;
+    } else {
+      srcRowEl.innerHTML = `
+        <div class="sub-chart-label">入驻来源构成</div>
+        <div style="background:var(--bg);border:1px dashed var(--border);border-radius:var(--radius-sm);padding:10px 14px;font-size:12px;color:var(--text-3);">
+          暂无数据（需数据推送 registered_source）
+        </div>
+      `;
+    }
+  }
+
+  const curBaseline = {};
+  (state.detail.industry_baseline || []).forEach(b => { curBaseline[b.industry] = b.registered_uid || 0; });
+
+  const weeks = state.history.weeks || [];
+  const curIdx = weeks.findIndex(w => w.run_id === state.detail.run.id);
+  const prevWeek = curIdx > 0 ? weeks[curIdx - 1]
+                              : (curIdx === -1 && weeks.length ? weeks[weeks.length - 1] : null);
+
+  if (!prevWeek) {
+    el.innerHTML = '<div class="chart-empty">未找到上周数据</div>';
+    subEl.textContent = '无上周参照';
+    return;
+  }
+
+  fetch(`/api/runs/${prevWeek.run_id}`).then(r => r.json()).then(prev => {
+    const prevBaseline = {};
+    (prev.industry_baseline || []).forEach(b => { prevBaseline[b.industry] = b.registered_uid || 0; });
+
+    const prevLabel = prevWeek.is_baseline && prevWeek.baseline_label
+      ? prevWeek.baseline_label
+      : `${(prevWeek.week_start||'').replace(/-/g,'').slice(4)}-${(prevWeek.week_end||'').replace(/-/g,'').slice(4)}`;
+    subEl.textContent = `按本周入驻量降序 · 点击行业查看来源下钻`;
+
+    const allIndustries = new Set([...Object.keys(curBaseline), ...Object.keys(prevBaseline)]);
+    const items = [...allIndustries]
+      .map(ind => ({ industry: ind, cur: curBaseline[ind] || 0, prev: prevBaseline[ind] || 0 }))
+      .filter(i => i.cur > 0 || i.prev > 0)
+      .sort((a, b) => b.cur - a.cur);
+
+    if (!items.length) {
+      el.innerHTML = '<div class="chart-empty">暂无数据</div>';
+      return;
+    }
+
+    const curTotal = items.reduce((s, i) => s + i.cur, 0);
+    const prevTotal = items.reduce((s, i) => s + i.prev, 0);
+    const diff = curTotal - prevTotal;
+    const diffPct = prevTotal ? (diff / prevTotal * 100) : null;
+    const sign = diff > 0 ? '+' : '';
+    const trendColor = diff > 0 ? '#f43f5e' : (diff < 0 ? '#10b981' : '#94a3b8');
+    const arrow = diff > 0 ? '↑' : (diff < 0 ? '↓' : '—');
+    overallEl.innerHTML = `
+      <div class="mini-card" style="border-left:3px solid #3b82f6;">
+        <div class="mini-card-label">本周整体入驻</div>
+        <div class="mini-card-value">${curTotal.toLocaleString()}</div>
+      </div>
+      <div class="mini-card">
+        <div class="mini-card-label">上周整体入驻</div>
+        <div class="mini-card-value" style="color:var(--text-2);font-weight:500;">${prevTotal.toLocaleString()}</div>
+      </div>
+      <div class="mini-card">
+        <div class="mini-card-label">环比变化</div>
+        <div class="mini-card-value" style="color:${trendColor};font-size:20px;">${arrow} ${sign}${diff.toLocaleString()}${diffPct !== null ? ` (${sign}${diffPct.toFixed(1)}%)` : ''}</div>
+      </div>
+    `;
+
+    el.style.height = Math.max(340, items.length * 36 + 60) + 'px';
+
+    // 以本周为主的堆叠：
+    //   上升行 (cur > prev): base=prev, extra=cur-prev(绿)，总长=cur
+    //   下降行 (cur < prev): base=cur(蓝), extra=0，总长=cur；额外用 markPoint 在 prev 位置标一条浅红短线 + “-XXX”标签提示上周基线
+    const baseData = items.map(i => Math.min(i.cur, i.prev));
+    const upData = items.map(i => Math.max(0, i.cur - i.prev));
+
+    const prevMarkPoints = items.map((i, idx) => {
+      if (i.prev <= i.cur) return null;
+      return {
+        coord: [i.prev, idx],
+        symbol: 'rect',
+        symbolSize: [2, 14],
+        itemStyle: { color: '#fda4af' },
+        label: {
+          show: true, position: 'right', distance: 4,
+          color: '#f43f5e', fontSize: 10, fontWeight: 600,
+          formatter: `-${(i.prev - i.cur).toLocaleString()}`,
+        },
+      };
+    }).filter(Boolean);
+
+    const chart = echarts.init(el);
+    chart.setOption({
+      tooltip: {
+        trigger: 'axis', axisPointer: { type: 'shadow', shadowStyle: { color: 'rgba(0,0,0,0.03)' } },
+        backgroundColor: '#fff', borderColor: '#e2e8f0', borderWidth: 1,
+        padding: [10, 14], textStyle: { color: '#1e293b', fontSize: 12 },
+        formatter: params => {
+          const it = items[params[0].dataIndex];
+          const d = it.cur - it.prev;
+          const sign = d > 0 ? '+' : '';
+          const changePct = it.prev ? (d / it.prev * 100).toFixed(1) : '—';
+          const color = d > 0 ? '#10b981' : (d < 0 ? '#f43f5e' : '#94a3b8');
+          return `${it.industry}<br/>` +
+            `<span style="color:#64748b;">本周</span> <b>${it.cur.toLocaleString()}</b><br/>` +
+            `<span style="color:#64748b;">上周</span> ${it.prev.toLocaleString()}<br/>` +
+            `<b style="color:${color};">${sign}${d.toLocaleString()}（${sign}${changePct}%）</b>`;
+        },
+      },
+      legend: {
+        top: 0, right: 0,
+        textStyle: { fontSize: 11, color: '#64748b' },
+        itemWidth: 12, itemHeight: 10, itemGap: 16,
+        data: ['上周基线', '本周新增'],
+      },
+      grid: { top: 36, right: 100, bottom: 24, left: 96 },
+      xAxis: {
+        type: 'value',
+        axisLine: { show: false }, axisTick: { show: false },
+        axisLabel: { color: '#94a3b8', fontSize: 11 },
+        splitLine: { lineStyle: { color: '#f1f5f9', type: 'dashed' } },
+      },
+      yAxis: {
+        type: 'category', inverse: true,
+        data: items.map(i => i.industry),
+        axisLine: { show: false }, axisTick: { show: false },
+        axisLabel: { color: '#475569', fontSize: 12 },
+      },
+      series: [
+        {
+          name: '上周基线', type: 'bar', stack: 'waterfall',
+          data: baseData,
+          itemStyle: { color: '#e2e8f0' },
+          barMaxWidth: 14,
+          label: {
+            show: true, position: 'insideRight', color: '#94a3b8', fontSize: 10,
+            formatter: ({ dataIndex }) => {
+              const it = items[dataIndex];
+              // 下降行时内部不显示（避免与右侧 -XXX 重复）；上升行内部显示上周基线值
+              return it.cur > it.prev ? it.prev.toLocaleString() : '';
+            },
+          },
+        },
+        {
+          name: '本周新增', type: 'bar', stack: 'waterfall',
+          data: upData,
+          itemStyle: { color: '#6ee7b7', borderRadius: [0, 3, 3, 0] },
+          barMaxWidth: 14,
+          label: {
+            show: true, position: 'right', color: '#475569', fontSize: 11, fontWeight: 600,
+            formatter: ({ dataIndex }) => {
+              const it = items[dataIndex];
+              const d = it.cur - it.prev;
+              if (d > 0) return `{cur|${it.cur.toLocaleString()}} {up|+${d.toLocaleString()}}`;
+              // 下降行右侧显示本周值 + -XXX
+              if (d < 0) return `{cur|${it.cur.toLocaleString()}} {down|${d.toLocaleString()}}`;
+              return `{cur|${it.cur.toLocaleString()}}`;
+            },
+            rich: {
+              cur:  { color: '#475569', fontSize: 11, fontWeight: 600 },
+              up:   { color: '#10b981', fontSize: 10, fontWeight: 600, padding: [0, 0, 0, 4] },
+              down: { color: '#f43f5e', fontSize: 10, fontWeight: 600, padding: [0, 0, 0, 4] },
+            },
+          },
+        },
+      ],
+    });
+
+    window.addEventListener('resize', () => chart.resize());
+    chart.on('click', params => {
+      if (params.componentType === 'series' && params.name) openIndustrySourceDrawer(params.name);
+    });
+    state.charts.registeredCompare = chart;
+  }).catch(e => {
+    el.innerHTML = `<div class="chart-empty">拉取上周数据失败：${e.message}</div>`;
+  });
+}
+
+// ── 实锤造假来源比例 ─────────────
+function renderViolationSourceSection() {
+  return `
+    <div class="section">
+      <div class="section-head">
+        <div>
+          <div class="section-title">造假来源渠道</div>
+          <div class="section-sub">大盘整体各渠道占比 · 各行业渠道分布</div>
+        </div>
+      </div>
+      <div id="source-overall-cards" style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:12px;"></div>
+      <div id="source-overall-stacked" style="margin-bottom:22px;"></div>
+      <div class="sub-chart-label">各行业渠道分布（按总量降序）</div>
+      <div class="chart" id="chart-violation-source-bar"></div>
+    </div>
+  `;
+}
+
+function renderViolationSourceChart() {
+  const cardsEl = document.getElementById('source-overall-cards');
+  const stackedEl = document.getElementById('source-overall-stacked');
+  const barEl = document.getElementById('chart-violation-source-bar');
+  if (!cardsEl || !barEl) return;
+
+  const rawItems = (state.detail.violation_source || [])
+    .map(v => ({
+      industry: v.industry,
+      professional: v.professional_count || 0,
+      shop: v.shop_count || 0,
+      ad: v.ad_count || 0,
+      total: (v.professional_count || 0) + (v.shop_count || 0) + (v.ad_count || 0),
+    }))
+    .filter(i => i.total > 0);
+
+  if (!rawItems.length) {
+    cardsEl.innerHTML = '<div class="chart-empty" style="grid-column:1/-1;height:120px;">暂无数据<br/><span style="font-size:11px;color:#94a3b8;">需数据推送 violation_source</span></div>';
+    stackedEl.innerHTML = '';
+    barEl.innerHTML = '<div class="chart-empty">暂无数据</div>';
+    return;
+  }
+
+  const overall = rawItems.find(i => i.industry === '大盘整体')
+    || rawItems.reduce((acc, i) => {
+      acc.professional += i.professional;
+      acc.shop += i.shop;
+      acc.ad += i.ad;
+      acc.total += i.total;
+      return acc;
+    }, { industry: '大盘整体', professional: 0, shop: 0, ad: 0, total: 0 });
+
+  // ── 顶部 3 张 mini 卡（专业号/号店/号广，含占比） ──
+  const channels = [
+    { name: '专业号入驻', value: overall.professional, color: '#3b82f6' },
+    { name: '号店入驻', value: overall.shop, color: '#f59e0b' },
+    { name: '号广入驻', value: overall.ad, color: '#10b981' },
+  ];
+  cardsEl.innerHTML = channels.map(c => {
+    const pctVal = overall.total ? (c.value / overall.total * 100) : 0;
+    return `
+      <div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px 16px;position:relative;overflow:hidden;">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+          <span style="width:8px;height:8px;border-radius:2px;background:${c.color};"></span>
+          <span style="font-size:11px;color:var(--text-3);font-weight:500;letter-spacing:0.02em;">${c.name}</span>
+        </div>
+        <div style="display:flex;align-items:baseline;gap:8px;">
+          <div style="font-size:24px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--text-1);letter-spacing:-0.5px;">${pctVal.toFixed(1)}%</div>
+          <div style="font-size:12px;color:var(--text-3);font-variant-numeric:tabular-nums;">${c.value.toLocaleString()} 个</div>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  // ── 大盘整体：单条水平堆叠占比条（100% 归一化，直观展示比例） ──
+  const totalV = overall.total || 1;
+  const segs = channels.map(c => ({
+    ...c,
+    pct: c.value / totalV * 100,
+  })).filter(s => s.value > 0);
+
+  stackedEl.innerHTML = `
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px;">
+      <span style="font-size:11px;color:var(--text-3);font-weight:500;">大盘整体占比构成</span>
+      <span style="font-size:11px;color:var(--text-3);font-variant-numeric:tabular-nums;">总计 ${overall.total.toLocaleString()}</span>
+    </div>
+    <div style="display:flex;height:12px;border-radius:6px;overflow:hidden;background:var(--border-soft);">
+      ${segs.map(s => `<div title="${s.name} ${s.value} (${s.pct.toFixed(1)}%)" style="background:${s.color};width:${s.pct}%;transition:opacity 0.2s;" onmouseover="this.style.opacity=0.75" onmouseout="this.style.opacity=1"></div>`).join('')}
+    </div>
+    <div style="display:flex;gap:16px;margin-top:8px;flex-wrap:wrap;">
+      ${segs.map(s => `
+        <div style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text-2);">
+          <span style="width:8px;height:8px;border-radius:2px;background:${s.color};"></span>
+          <span>${s.name}</span>
+          <span style="color:var(--text-3);font-variant-numeric:tabular-nums;">${s.pct.toFixed(1)}%</span>
+        </div>
+      `).join('')}
+    </div>
+  `;
+
+  // ── 行业堆叠柱状图（铺满宽度） ──
+  const industryItems = rawItems
+    .filter(i => i.industry !== '大盘整体')
+    .sort((a, b) => b.total - a.total);
+
+  if (!industryItems.length) {
+    barEl.innerHTML = '<div class="chart-empty">暂无行业分布数据</div>';
+    return;
+  }
+
+  barEl.style.height = Math.max(300, industryItems.length * 34 + 60) + 'px';
+
+  const barChart = echarts.init(barEl);
+  barChart.setOption({
+    tooltip: {
+      trigger: 'axis', axisPointer: { type: 'shadow', shadowStyle: { color: 'rgba(0,0,0,0.03)' } },
+      backgroundColor: '#fff', borderColor: '#e2e8f0', borderWidth: 1,
+      padding: [10, 14], textStyle: { color: '#1e293b', fontSize: 12 },
+      formatter: params => {
+        const it = industryItems[params[0].dataIndex];
+        let html = `${it.industry} <span style="color:#94a3b8;">(总计 ${it.total})</span><br/>`;
+        params.forEach(p => {
+          const pct = it.total ? (p.value / it.total * 100).toFixed(1) : '0.0';
+          html += `${p.marker} ${p.seriesName}: ${p.value} <span style="color:#94a3b8;">(${pct}%)</span><br/>`;
+        });
+        return html;
+      },
+    },
+    legend: {
+      top: 0, right: 0,
+      textStyle: { fontSize: 11, color: '#64748b' },
+      itemWidth: 10, itemHeight: 10, itemGap: 16,
+    },
+    grid: { top: 32, right: 40, bottom: 20, left: 96 },
+    xAxis: {
+      type: 'value',
+      axisLine: { show: false }, axisTick: { show: false },
+      axisLabel: { color: '#94a3b8', fontSize: 11 },
+      splitLine: { lineStyle: { color: '#f1f5f9', type: 'dashed' } },
+    },
+    yAxis: {
+      type: 'category', inverse: true,
+      data: industryItems.map(i => i.industry),
+      axisLine: { show: false }, axisTick: { show: false },
+      axisLabel: { color: '#475569', fontSize: 12 },
+    },
+    series: [
+      {
+        name: '专业号入驻', type: 'bar', stack: 'source',
+        data: industryItems.map(i => i.professional),
+        itemStyle: { color: '#3b82f6' },
+        barMaxWidth: 14,
+      },
+      {
+        name: '号店入驻', type: 'bar', stack: 'source',
+        data: industryItems.map(i => i.shop),
+        itemStyle: { color: '#f59e0b' },
+        barMaxWidth: 14,
+      },
+      {
+        name: '号广入驻', type: 'bar', stack: 'source',
+        data: industryItems.map(i => i.ad),
+        itemStyle: { color: '#10b981', borderRadius: [0, 3, 3, 0] },
+        barMaxWidth: 14,
+      },
+    ],
+  });
+  window.addEventListener('resize', () => barChart.resize());
+}
+
+// ── 算法准确率 ─────────────
+function renderSuspectedSection() {
+  return `
+    <div class="section">
+      <div class="section-head">
+        <div>
+          <div class="section-title">算法准确率</div>
+          <div class="section-sub">人工确认实锤 / 进入标注池</div>
+        </div>
+      </div>
+      <div class="chart tall" id="chart-accuracy"></div>
+    </div>
+  `;
+}
+
+function renderSuspectedChart() {
+  const el = document.getElementById('chart-accuracy');
+  if (!el) return;
+
+  const items = (state.detail.industry_baseline || [])
+    .map(b => ({
+      industry: b.industry,
+      annotated: b.annotated_uid || 0,
+      confirmed: b.confirmed_fake_uid || 0,
+      rate: pct(b.confirmed_fake_uid || 0, b.annotated_uid || 0),
+    }))
+    .filter(i => i.annotated > 0)
+    .sort((a, b) => b.rate - a.rate);
+
+  if (!items.length) {
+    el.innerHTML = '<div class="chart-empty">暂无算法准确率数据<br/><span style="font-size:11px;color:#94a3b8;">需数据推送 annotated_uid + confirmed_fake_uid</span></div>';
+    return;
+  }
+
+  const chart = echarts.init(el);
+  chart.setOption({
+    tooltip: {
+      trigger: 'axis', axisPointer: { type: 'shadow', shadowStyle: { color: 'rgba(0,0,0,0.03)' } },
+      backgroundColor: '#fff', borderColor: '#e2e8f0', borderWidth: 1,
+      padding: [10, 14], textStyle: { color: '#1e293b', fontSize: 12 },
+      formatter: params => {
+        const it = items[params[0].dataIndex];
+        return `${it.industry}<br/>` +
+          `<span style="color:#64748b;">标注池</span> ${it.annotated.toLocaleString()}<br/>` +
+          `<span style="color:#64748b;">实锤</span> ${it.confirmed.toLocaleString()}<br/>` +
+          `<b style="color:#3b82f6;">准确率 ${it.rate.toFixed(2)}%</b>`;
+      },
+    },
+    grid: { top: 16, right: 56, bottom: 20, left: 100 },
+    xAxis: {
+      type: 'value', axisLabel: { formatter: '{value}%', color: '#94a3b8', fontSize: 11 },
+      splitLine: { lineStyle: { color: '#f1f5f9', type: 'dashed' } },
+      axisLine: { show: false }, axisTick: { show: false },
+      max: 100,
+    },
+    yAxis: {
+      type: 'category', inverse: true,
+      data: items.map(i => i.industry),
+      axisLine: { show: false }, axisTick: { show: false },
+      axisLabel: { color: '#475569', fontSize: 12 },
+    },
+    series: [{
+      type: 'bar',
+      data: items.map(i => ({
+        value: +i.rate.toFixed(2),
+        itemStyle: {
+          color: {
+            type: 'linear', x: 0, y: 0, x2: 1, y2: 0,
+            colorStops: [
+              { offset: 0, color: i.rate >= 50 ? '#10b981' : i.rate >= 20 ? '#3b82f6' : '#94a3b8' },
+              { offset: 1, color: i.rate >= 50 ? '#6ee7b7' : i.rate >= 20 ? '#60a5fa' : '#cbd5e1' },
+            ],
+          },
+          borderRadius: [0, 3, 3, 0],
+        },
+      })),
+      label: { show: true, position: 'right', color: '#94a3b8', fontSize: 11, formatter: '{c}%' },
+      barMaxWidth: 14,
+    }],
+  });
+
+  window.addEventListener('resize', () => chart.resize());
+  state.charts.accuracy = chart;
+}
+
+// ── 抽样置信对比 ─────────────
+function renderConfidenceSection() {
+  return `
+    <div class="section">
+      <div class="section-head">
+        <div>
+          <div class="section-title">抽样置信对比</div>
+          <div class="section-sub">抽样占比 vs 入驻占比，偏差越小代表性越好</div>
+        </div>
+      </div>
+      <div class="chart tall" id="chart-confidence"></div>
+    </div>
+  `;
+}
+
+function renderConfidenceChart() {
+  const el = document.getElementById('chart-confidence');
+  if (!el) return;
+
+  const sample = {};
+  (state.detail.sample_distribution || []).forEach(s => { sample[s.industry] = s.count; });
+  const baseline = {};
+  (state.detail.industry_baseline || []).forEach(b => { baseline[b.industry] = b.registered_uid || 0; });
+
+  const allIndustries = new Set([...Object.keys(sample), ...Object.keys(baseline)]);
+  const sampleTotal = Object.values(sample).reduce((s, v) => s + v, 0);
+  const baselineTotal = Object.values(baseline).reduce((s, v) => s + v, 0);
+
+  const items = [...allIndustries]
+    .map(ind => ({
+      industry: ind,
+      samplePct: sampleTotal ? sample[ind] / sampleTotal * 100 : 0,
+      baselinePct: baselineTotal ? baseline[ind] / baselineTotal * 100 : 0,
+    }))
+    .filter(i => i.samplePct > 0 || i.baselinePct > 0)
+    .sort((a, b) => b.baselinePct - a.baselinePct);
+
+  if (!items.length) {
+    el.innerHTML = '<div class="chart-empty">暂无数据</div>';
+    return;
+  }
+
+  // 改用水平条形图，避免 x 轴标签拥挤
+  el.style.height = Math.max(300, items.length * 34 + 60) + 'px';
+
+  const chart = echarts.init(el);
+  chart.setOption({
+    tooltip: {
+      trigger: 'axis', axisPointer: { type: 'shadow', shadowStyle: { color: 'rgba(0,0,0,0.03)' } },
+      backgroundColor: '#fff', borderColor: '#e2e8f0', borderWidth: 1,
+      padding: [10, 14], textStyle: { color: '#1e293b', fontSize: 12 },
+      formatter: params => {
+        const it = items[params[0].dataIndex];
+        const delta = it.samplePct - it.baselinePct;
+        const sign = delta > 0 ? '+' : '';
+        const deltaColor = Math.abs(delta) < 1 ? '#94a3b8' : (delta > 0 ? '#3b82f6' : '#f43f5e');
+        return `${it.industry}<br/>` +
+          `<span style="color:#64748b;">抽样</span> ${it.samplePct.toFixed(2)}%<br/>` +
+          `<span style="color:#64748b;">入驻</span> ${it.baselinePct.toFixed(2)}%<br/>` +
+          `<b style="color:${deltaColor};">偏差 ${sign}${delta.toFixed(2)}pp</b>`;
+      },
+    },
+    legend: {
+      top: 0, right: 0,
+      textStyle: { fontSize: 11, color: '#64748b' },
+      itemWidth: 10, itemHeight: 10, itemGap: 16,
+    },
+    grid: { top: 32, right: 52, bottom: 20, left: 96 },
+    xAxis: {
+      type: 'value', axisLabel: { formatter: '{value}%', color: '#94a3b8', fontSize: 11 },
+      splitLine: { lineStyle: { color: '#f1f5f9', type: 'dashed' } },
+      axisLine: { show: false }, axisTick: { show: false },
+    },
+    yAxis: {
+      type: 'category', inverse: true,
+      data: items.map(i => i.industry),
+      axisLine: { show: false }, axisTick: { show: false },
+      axisLabel: { color: '#475569', fontSize: 12 },
+    },
+    series: [
+      {
+        name: '抽样占比', type: 'bar',
+        data: items.map(i => +i.samplePct.toFixed(2)),
+        itemStyle: { color: '#3b82f6', borderRadius: [0, 3, 3, 0] },
+        barMaxWidth: 10,
+        barGap: '30%',
+      },
+      {
+        name: '入驻占比', type: 'bar',
+        data: items.map(i => +i.baselinePct.toFixed(2)),
+        itemStyle: { color: '#cbd5e1', borderRadius: [0, 3, 3, 0] },
+        barMaxWidth: 10,
+      },
+    ],
+  });
+
+  window.addEventListener('resize', () => chart.resize());
+  state.charts.confidence = chart;
+}
+</script>
+</body>
+</html>

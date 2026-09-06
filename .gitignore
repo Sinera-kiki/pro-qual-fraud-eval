@@ -1,0 +1,54 @@
+# Byte-compiled / cache
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+
+# Local secrets
+.push_secret
+.env
+.env.*
+!.env.example
+
+# Data & artifacts (must NOT be tracked)
+data/
+out/
+tmp/
+*.csv
+*.xlsx
+*.xls
+*.parquet
+*.jsonl
+img_disk_cache/
+w[0-9]*/
+daily/
+multi_day/
+baseline_out/
+cmp_*/
+
+# Logs
+*.log
+run_ledger.csv
+
+# IDE
+.idea/
+.vscode/
+.DS_Store
+
+# Node / Frontend build artifacts
+node_modules/
+dist/
+build/
+*.tsbuildinfo
+
+# DB properties (secrets)
+db.properties
+
+# GitHub-generated
+*.orig
+*.rej
