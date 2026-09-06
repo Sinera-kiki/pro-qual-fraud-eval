@@ -186,21 +186,13 @@ rank = row_number() OVER (ORDER BY crc32(concat(user_id, '_seed42')))
 
 ## 系统界面预览
 
-### 1. 评估工作流状态机大盘 (`dashboard`)
-展示周度 9 阶段执行流转、实时状态机监控、违规浓度表格与全流程文件产物管理：
-![工作流状态大盘](assets/screenshots/01_workflow_dashboard.png)
+### 1. 聚类跑批自助服务平台 (`cluster-service`)
+业务端自助上传账户清单、支持历史图池匹配 / 自聚簇双模式、5 步流水线全自动处理与状态监控：
+![聚类跑批自助服务](assets/screenshots/01_cluster_service_portal.png)
 
-### 2. 多维数据分析与归因大盘 (`dashboard/report`)
-多周期违规浓度趋势对比、各行业入驻量级分布、造假来源渠道构成与下钻归因：
-![数据归因分析大盘](assets/screenshots/03_sources_attribution.png)
-
-### 3. 资质聚类人工标注工作台 (`annotation-platform`)
-数据集管理、449+ 簇级网格审查、二级分类打标（实锤造假 / 疑似造假 / 资质挂靠 / 不违规）与 100% 进度追踪：
-![资质聚类标注工作台](assets/screenshots/05_annotation_workspace.png)
-
-### 4. 聚类跑批自助服务平台 (`cluster-service`)
-业务端自助上传账户清单、支持历史图池匹配 / 自聚簇双模式、5 步流水线监控与自动化交付：
-![聚类跑批自助服务](assets/screenshots/06_cluster_service.png)
+### 2. 资质聚类标注管理平台 (`annotation-platform`)
+数据集批次管理、CSV 格式校验规范指引与簇级审核入口：
+![资质聚类标注管理平台](assets/screenshots/02_annotation_portal.png)
 
 ## 目录结构
 
